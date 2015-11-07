@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include "diag/Trace.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 // ----------------------------------------------------------------------------
 //
 // Semihosting STM32F1 empty sample (trace via DEBUG).
@@ -55,3 +58,15 @@ main(int argc, char* argv[])
 #pragma GCC diagnostic pop
 
 // ----------------------------------------------------------------------------
+void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
+{
+	/* This function will get called if a task overflows its stack.   If the
+	parameters are corrupt then inspect pxCurrentTCB to find which was the
+	offending task. */
+
+	( void ) xTask;
+	( void ) pcTaskName;
+
+	for( ;; );
+}
+
