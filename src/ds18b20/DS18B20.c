@@ -20,8 +20,8 @@ uint8_t DS18B20_ReadByte(uint8_t id);
 // 定义每个DS18B20的GPIO口
 static struDS18B20_GPIO_t		s_DS18B20s[] =
 {
-		{GPIO_Pin_1, GPIOA, RCC_APB2Periph_GPIOA},
-		{GPIO_Pin_2, GPIOA, RCC_APB2Periph_GPIOA}
+		{GPIO_Pin_5, GPIOE, RCC_APB2Periph_GPIOE},
+		{GPIO_Pin_6, GPIOE, RCC_APB2Periph_GPIOE}
 };
 
 static uint8_t		s_Scratchpad[9];
@@ -85,6 +85,7 @@ void initTIM5()
 
 	TIM_TimeBaseInit(TIM5, &TIM_TimeBaseStructure);
 }
+
 void Delay_us(uint16_t us)
 {
 	TIM_SetCounter(TIM5, us);

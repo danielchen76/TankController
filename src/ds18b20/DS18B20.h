@@ -39,6 +39,9 @@ typedef struct struDS18B20_GPIO
 
 
 BaseType_t InitDS18B20();
+
+#define MAIN_TANK_TEMP			0
+#define SUB_TANK_TEMP			1
 int16_t GetTemperature(uint8_t id);
 
 

@@ -12,6 +12,16 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "LEDTask/LEDTask.h"
+#include "main/controller.h"
+#include "main/TemperatureTask.h"
+#include "main/WaterLevelTask.h"
+#include "msg.h"
+#include "uart/tc_serial.h"
+#include "i2c/tc_i2c.h"
+#include "i2c/stm32_eval_i2c_ee.h"
+#include "setting/setting.h"
+
 // ----------------------------------------------------------------------------
 //
 // Semihosting STM32F1 empty sample (trace via DEBUG).
@@ -32,28 +42,66 @@
 #pragma GCC diagnostic ignored "-Wmissing-declarations"
 #pragma GCC diagnostic ignored "-Wreturn-type"
 
-int
-main(int argc, char* argv[])
+// 堆栈大小
+#define MAIN_TASK_STACK_SIZE		2048
+#define TEMP_TASK_STACK_SIZE		2048
+#define WATERLEVEL_TASK_STACK_SIZE	2048
+#define LED_TASK_STACK_SIZE			configMINIMAL_STACK_SIZE
+
+// 主线程，初始化使用，以及所有的主消息处理
+static void MainTask( void * pvParameters)
 {
-  // At this stage the system clock should have already been configured
-  // at high speed.
+	// 初始化消息数组和所有消息队列
+	InitMsgArray();
+	InitMainMsgQueue();
 
-#define LOOP_COUNT (5)
-  int loops = LOOP_COUNT;
-  if (argc > 1)
-    {
-      // If defined, get the number of loops from the command line,
-      // configurable via semihosting.
-      loops = atoi (argv[1]);
-    }
+	InitLEDTask();
 
-  // Short loop.
-  for (int i = 0; i < loops; i++)
-    {
-       // Add your code here.
-    }
-  return 0;
+	// 初始化LED指示灯线程
+	xTaskCreate(LEDTask, "LEDTask", LED_TASK_STACK_SIZE, NULL, 1, NULL);
+
+	// E2PROM，加载默认配置，和从E2PROM中读取保存的配置
+	/* Initialize the I2C EEPROM driver ----------------------------------------*/
+	sEE_Init();
+	InitSetting();
+
+	// 初始化Shell
+	InitShell();
+	EnableBluetooth(pdTRUE);		// TODO: 需要最后再确定是否默认开启蓝牙模块，还是通过手动方式开启。
+
+	// 初始化温度控制任务
+	InitTempMsgQueue();
+
+	// 初始化水位控制任务
+	InitWaterLevelMsgQueue();
+
+	// 初始化GUI
+
+	// 启动任务
+	xTaskCreate(TempControlTask, "TempTask", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	xTaskCreate(WaterLevelControlTask, "WaterLevelTask", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+
+	// 进入主任务的消息处理函数（不再返回）
+	controller_entry();
 }
+
+
+int main(int argc, char* argv[])
+{
+	// At this stage the system clock should have already been configured
+	// at high speed.
+
+	// 初始化主线程
+	xTaskCreate(MainTask, "MainTask", MAIN_TASK_STACK_SIZE, NULL, 1, NULL);
+
+	// start FreeRTOS
+	vTaskStartScheduler();
+
+	// Would not go here!
+
+	return 0;
+}
+
 
 #pragma GCC diagnostic pop
 

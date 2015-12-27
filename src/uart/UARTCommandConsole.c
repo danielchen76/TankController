@@ -101,7 +101,7 @@ available. */
 #define cmdMAX_MUTEX_WAIT		pdMS_TO_TICKS( 300 )
 
 #ifndef configCLI_BAUD_RATE
-	#define configCLI_BAUD_RATE	115200
+	#define configCLI_BAUD_RATE		115200
 #endif
 
 /*-----------------------------------------------------------*/

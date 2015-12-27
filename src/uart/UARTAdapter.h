@@ -70,6 +70,8 @@
 #ifndef SERIAL_COMMS_H
 #define SERIAL_COMMS_H
 
+#include "stm32f10x.h"
+
 typedef void * xComPortHandle;
 
 #define USARTsh                   USART1
@@ -79,9 +81,10 @@ typedef void * xComPortHandle;
 #define USARTsh_RxPin             GPIO_Pin_10
 #define USARTsh_TxPin             GPIO_Pin_9
 
-#define USARTsh_BT_GPIO           GPIOA
-#define USARTsh_BT_GPIO_CLK       RCC_APB2Periph_GPIOA
-#define USARTsh_BT_Pin            GPIO_Pin_8
+// 蓝牙RESET引脚，用于控制蓝牙模块进入低功耗模式
+#define USARTsh_BT_GPIO           GPIOE
+#define USARTsh_BT_GPIO_CLK       RCC_APB2Periph_GPIOE
+#define USARTsh_BT_Pin            GPIO_Pin_2
 
 
 xComPortHandle xSerialPortInitMinimal( unsigned long ulWantedBaud, unsigned portBASE_TYPE uxQueueLength );

@@ -8,8 +8,9 @@
 #ifndef MAIN_CONTROLLER_H_
 #define MAIN_CONTROLLER_H_
 
+#include <FreeRTOS.h>
 
-
-
+void InitMainMsgQueue( void );
+void controller_entry(void);
 
 #endif /* MAIN_CONTROLLER_H_ */
