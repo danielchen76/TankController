@@ -7,6 +7,8 @@
  *      Author: daniel
  */
 
+#include <stdio.h>
+
 #include "tc_serial.h"
 #include "UARTAdapter.h"
 
@@ -14,7 +16,7 @@
 #include "setting/setting.h"
 
 #define mainUART_COMMAND_CONSOLE_STACK_SIZE		( configMINIMAL_STACK_SIZE * 10 )
-#define mainUART_COMMAND_CONSOLE_TASK_PRIORITY  	4
+#define mainUART_COMMAND_CONSOLE_TASK_PRIORITY  	1
 
 
 extern void vUARTCommandConsoleStart( uint16_t usStackSize, UBaseType_t uxPriority );
@@ -22,6 +24,9 @@ extern void vUARTCommandConsoleStart( uint16_t usStackSize, UBaseType_t uxPriori
 // Test command
 static BaseType_t cmd_test( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
 {
+	( void )pcCommandString;
+
+	snprintf(pcWriteBuffer, xWriteBufferLen, "Test echo.\r\n");
 	return pdFALSE;
 }
 

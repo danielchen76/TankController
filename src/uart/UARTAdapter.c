@@ -155,7 +155,7 @@ void UART_Config(uint32_t baud)
 	USART_ITConfig(USARTsh, USART_IT_RXNE, ENABLE);
 
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 6;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configLIBRARY_LOWEST_INTERRUPT_PRIORITY;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
@@ -178,7 +178,7 @@ xComPortHandle xSerialPortInitMinimal( unsigned long ulWantedBaud, unsigned port
 	/* Create the queues used to hold Rx/Tx characters. */
 	xRxedChars = xQueueCreate(uxQueueLength,
 			( unsigned portBASE_TYPE ) sizeof( signed char ));
-	xCharsForTx = xQueueCreate(uxQueueLength + 1,
+	xCharsForTx = xQueueCreate(uxQueueLength,
 			( unsigned portBASE_TYPE ) sizeof( signed char ));
 
 	/* If the queue/semaphore was created correctly then setup the serial port
@@ -220,31 +220,22 @@ signed portBASE_TYPE xSerialGetChar( xComPortHandle pxPort, signed char *pcRxedC
 }
 /*-----------------------------------------------------------*/
 
-void vSerialPutString( xComPortHandle pxPort, const signed char * const pcString, unsigned short usStringLength )
+void vSerialPutString(xComPortHandle pxPort, const signed char * const pcString,
+		unsigned short usStringLength)
 {
-signed char *pxNext;
-
-	/* A couple of parameters that this port does not use. */
-	( void ) usStringLength;
-	( void ) pxPort;
-
-	/* NOTE: This implementation does not handle the queue being full as no
-	block time is used! */
-
-	/* The port handle is not required as this driver only supports UART1. */
-	( void ) pxPort;
-
-	pxNext = ( signed char * ) pcString;
-
-	//UART_write(USART1, pcString);
-
+	signed char *pxNext;
 	//Send each character in the string, one at a time.
-	pxNext = ( signed char * ) pcString;
-	while( *pxNext )
+	//pxNext = (signed char *) pcString;
+
+	for (pxNext = (signed char *)pcString; pxNext < (pcString + usStringLength); pxNext++)
 	{
-		xSerialPutChar( pxPort, *pxNext, serNO_BLOCK );
-		pxNext++;
+		xSerialPutChar(pxPort, *pxNext, serTX_BLOCK_TIME);
 	}
+//	while (*pxNext)
+//	{
+//		xSerialPutChar(pxPort, *pxNext, serTX_BLOCK_TIME);
+//		pxNext++;
+//	}
 }
 
 void UART_write(USART_TypeDef* USARTx, volatile char *s){
@@ -299,7 +290,7 @@ char cChar;
 		}
 		else
 		{
-			USART_ITConfig( USART1, USART_IT_TXE, DISABLE );		
+			USART_ITConfig( USART1, USART_IT_TXE, DISABLE );
 		}		
 	}
 	

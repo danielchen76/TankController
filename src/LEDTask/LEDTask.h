@@ -15,5 +15,8 @@ void LEDTask( void * pvParameters);
 
 void SetErrorLED(BaseType_t bError);
 
+// For Debug use only
+void SetDebugLED(BaseType_t bOn);
+
 
 #endif /* LEDTASK_LEDTASK_H_ */

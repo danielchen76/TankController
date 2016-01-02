@@ -166,6 +166,16 @@ xComPortHandle xPort;
 	/* Send the welcome message. */
 	vSerialPutString( xPort, ( signed char * ) pcWelcomeMessage, strlen( pcWelcomeMessage ) );
 
+//	// test
+//	for (;;)
+//	{
+//		vSerialPutString( xPort, ( signed char * ) pcNewLine, strlen( pcNewLine ) );
+//		vSerialPutString( xPort, ( signed char * ) pcNewLine, strlen( pcNewLine ) );
+//		vSerialPutString( xPort, ( signed char * ) pcWelcomeMessage, strlen( pcWelcomeMessage ) );
+//
+//		vTaskDelay(200 / portTICK_RATE_MS);
+//	}
+
 	for( ;; )
 	{
 		/* Wait for the next character.  The while loop is used in case

@@ -16,6 +16,7 @@
 #include "main/controller.h"
 #include "main/TemperatureTask.h"
 #include "main/WaterLevelTask.h"
+#include "gpio/tc_gpio.h"
 #include "msg.h"
 #include "uart/tc_serial.h"
 #include "i2c/tc_i2c.h"
@@ -69,6 +70,10 @@ static void MainTask( void * pvParameters)
 	InitShell();
 	EnableBluetooth(pdTRUE);		// TODO: 需要最后再确定是否默认开启蓝牙模块，还是通过手动方式开启。
 
+	// 初始化所有GPIO口
+	InitPowerGPIO();
+	InitSensorsGPIO();
+
 	// 初始化温度控制任务
 	InitTempMsgQueue();
 
@@ -78,8 +83,8 @@ static void MainTask( void * pvParameters)
 	// 初始化GUI
 
 	// 启动任务
-	xTaskCreate(TempControlTask, "TempTask", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(WaterLevelControlTask, "WaterLevelTask", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	//xTaskCreate(TempControlTask, "TempTask", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	//xTaskCreate(WaterLevelControlTask, "WaterLevelTask", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
 
 	// 进入主任务的消息处理函数（不再返回）
 	controller_entry();
@@ -93,6 +98,8 @@ int main(int argc, char* argv[])
 
 	// 初始化主线程
 	xTaskCreate(MainTask, "MainTask", MAIN_TASK_STACK_SIZE, NULL, 1, NULL);
+
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 
 	// start FreeRTOS
 	vTaskStartScheduler();

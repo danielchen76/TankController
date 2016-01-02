@@ -43,14 +43,26 @@
 							<option id="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.createflash.605066354" name="Create flash image" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.createflash" value="true" valueType="boolean"/>
 							<option id="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.printsize.1912240398" name="Print size" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.printsize" value="true" valueType="boolean"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform.1874773175" isAbstract="false" osList="all" superClass="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/TankController}/Debug" id="ilg.gnuarmeclipse.managedbuild.cross.builder.223804287" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="ilg.gnuarmeclipse.managedbuild.cross.builder"/>
+							<builder buildPath="${workspace_loc:/TankController}/Debug" id="ilg.gnuarmeclipse.managedbuild.cross.builder.223804287" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="ilg.gnuarmeclipse.managedbuild.cross.builder">
+								<outputEntries>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Debug"/>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Release"/>
+								</outputEntries>
+							</builder>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.1155987561" name="Cross ARM GNU Assembler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor.777435204" name="Use preprocessor" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor" value="true" valueType="boolean"/>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths.177491284" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;../include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include/cmsis&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f1-stdperiph&quot;"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include/cmsis"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include/stm32f1-stdperiph"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS/Source/portable/GCC/ARM_CM3"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS/Source/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/spiffs"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/spiffs/src"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/src"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/src/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs.75831037" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
@@ -66,17 +78,17 @@
 							</tool>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.1772680753" name="Cross ARM C Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths.843066484" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;../include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/Source/portable/GCC/ARM_CM3&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../FreeRTOS&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../FreeRTOS/Source/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../spiffs&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../spiffs/src&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../src&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../src/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include/cmsis&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f1-stdperiph&quot;"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include/cmsis"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include/stm32f1-stdperiph"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS/Source/portable/GCC/ARM_CM3"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS/Source/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/spiffs"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/spiffs/src"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/src"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/src/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs.1709596158" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG"/>
@@ -92,10 +104,17 @@
 							</tool>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.2100747024" name="Cross ARM C++ Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths.2066574393" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;../include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include/cmsis&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;../system/include/stm32f1-stdperiph&quot;"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include/cmsis"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/system/include/stm32f1-stdperiph"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS/Source/portable/GCC/ARM_CM3"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/FreeRTOS/Source/include"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/spiffs"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/spiffs/src"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/src"/>
+									<listOptionValue builtIn="false" value="C:/Users/daniel/Documents/Code/TankController/src/include"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.noexceptions.1032998491" name="Do not use exceptions (-fno-exceptions)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.noexceptions" useByScannerDiscovery="true" value="true" valueType="boolean"/>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.nortti.1432364222" name="Do not use RTTI (-fno-rtti)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.nortti" useByScannerDiscovery="true" value="true" valueType="boolean"/>
@@ -162,11 +181,10 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="Source/portable/MemMang/heap_5.c|Source/portable/MemMang/heap_3.c|Source/portable/MemMang/heap_2.c|Source/portable/MemMang/heap_1.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FreeRTOS"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="cli"/>
+						<entry excluding="Source/portable/MemMang/heap_1.c|Source/portable/MemMang/heap_5.c|Source/portable/MemMang/heap_3.c|Source/portable/MemMang/heap_2.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FreeRTOS"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="spiffs"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
-						<entry excluding="src/stm32f1-stdperiph/stm32f10x_wwdg.c|src/stm32f1-stdperiph/stm32f10x_sdio.c|src/stm32f1-stdperiph/stm32f10x_pwr.c|src/stm32f1-stdperiph/stm32f10x_iwdg.c|src/stm32f1-stdperiph/stm32f10x_fsmc.c|src/stm32f1-stdperiph/stm32f10x_flash.c|src/stm32f1-stdperiph/stm32f10x_exti.c|src/stm32f1-stdperiph/stm32f10x_dbgmcu.c|src/stm32f1-stdperiph/stm32f10x_dac.c|src/stm32f1-stdperiph/stm32f10x_crc.c|src/stm32f1-stdperiph/stm32f10x_cec.c|src/stm32f1-stdperiph/stm32f10x_can.c|src/stm32f1-stdperiph/stm32f10x_bkp.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="system"/>
+						<entry excluding="src/stm32f1-stdperiph/stm32f10x_dbgmcu.c|src/stm32f1-stdperiph/stm32f10x_wwdg.c|src/stm32f1-stdperiph/stm32f10x_iwdg.c|src/stm32f1-stdperiph/stm32f10x_bkp.c|src/stm32f1-stdperiph/stm32f10x_crc.c|src/stm32f1-stdperiph/stm32f10x_dac.c|src/stm32f1-stdperiph/stm32f10x_can.c|src/stm32f1-stdperiph/stm32f10x_pwr.c|src/stm32f1-stdperiph/stm32f10x_flash.c|src/stm32f1-stdperiph/stm32f10x_exti.c|src/stm32f1-stdperiph/stm32f10x_sdio.c|src/stm32f1-stdperiph/stm32f10x_fsmc.c|src/stm32f1-stdperiph/stm32f10x_cec.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="system"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -336,7 +354,6 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="cli"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="spiffs"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry excluding="src/stm32f1-stdperiph/stm32f10x_wwdg.c|src/stm32f1-stdperiph/stm32f10x_sdio.c|src/stm32f1-stdperiph/stm32f10x_pwr.c|src/stm32f1-stdperiph/stm32f10x_iwdg.c|src/stm32f1-stdperiph/stm32f10x_fsmc.c|src/stm32f1-stdperiph/stm32f10x_flash.c|src/stm32f1-stdperiph/stm32f10x_exti.c|src/stm32f1-stdperiph/stm32f10x_dbgmcu.c|src/stm32f1-stdperiph/stm32f10x_dac.c|src/stm32f1-stdperiph/stm32f10x_crc.c|src/stm32f1-stdperiph/stm32f10x_cec.c|src/stm32f1-stdperiph/stm32f10x_can.c|src/stm32f1-stdperiph/stm32f10x_bkp.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="system"/>
@@ -349,15 +366,6 @@
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="TankController.ilg.gnuarmeclipse.managedbuild.cross.target.elf.962803134" name="Executable" projectType="ilg.gnuarmeclipse.managedbuild.cross.target.elf"/>
 	</storageModule>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1470787970;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1470787970.;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.1772680753;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1248316317">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.release.1173433387;ilg.gnuarmeclipse.managedbuild.cross.config.elf.release.1173433387.;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.1939754769;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1288071535">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="refreshScope" versionNumber="2">
 		<configuration configurationName="Debug">
@@ -366,5 +374,17 @@
 		<configuration configurationName="Release">
 			<resource resourceType="PROJECT" workspacePath="/TankController"/>
 		</configuration>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1470787970;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1470787970.;ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.2100747024;ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.input.1248076416">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1470787970;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1470787970.;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.1772680753;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1248316317">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.release.1173433387;ilg.gnuarmeclipse.managedbuild.cross.config.elf.release.1173433387.;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.1939754769;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1288071535">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>

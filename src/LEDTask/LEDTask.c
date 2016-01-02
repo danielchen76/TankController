@@ -87,4 +87,8 @@ void SetErrorLED(BaseType_t bError)
 	s_bError = bError;
 }
 
+void SetDebugLED(BaseType_t bOn)
+{
+	bOn ? INTERNAL_LED_ON : INTERNAL_LED_OFF;
+}
 

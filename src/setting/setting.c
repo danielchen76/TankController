@@ -25,6 +25,7 @@ typedef struct
 	// 配置是指实际超声波探头测量的水位（如果要显示，需要进行换算），单位全部都是“毫米”
 	uint16_t		usSubTankWaterLevel;
 
+	// 超声波探头离缸底的深度，用来换算实际水位的
 	uint16_t		usMainTankHeigh;
 	uint16_t		usSubTankHeigh;
 	uint16_t		usROTankHeigh;
@@ -55,7 +56,7 @@ static TC_BlockState	s_BlockState;
 #define			BLOCK_A_OFFSET			0				// 0
 #define			BLOCK_B_OFFSET			0x400			// 1K
 
-#define			SETTING_OFFSET			4				// Setting在E2PROM的起始位置（4字节对齐，前两个字节是Magic，34字节是长度）
+#define			SETTING_OFFSET			4				// Setting在E2PROM的起始位置（4字节对齐，前两个字节是Magic，3、4字节是长度）
 #define			SETTING_LENGTH_OFFSET	2
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
@@ -273,6 +274,7 @@ static BaseType_t cmd_eeRead( char *pcWriteBuffer, size_t xWriteBufferLen, const
 	int32_t			offset;
 	int32_t			length, sublength;
 	uint8_t			Buffer[8];		// 一行8个字节
+	char			WriteBuffer[30];
 	BaseType_t		res;
 
 	// offset
@@ -284,6 +286,8 @@ static BaseType_t cmd_eeRead( char *pcWriteBuffer, size_t xWriteBufferLen, const
 	pcParameter = FreeRTOS_CLIGetParameter(pcCommandString, 2, &xParameterStringLength);
 	configASSERT( pcParameter );
 	length = atoi(pcParameter);
+
+	pcWriteBuffer[0] = 0;
 
 	while (length > 0)
 	{
@@ -300,17 +304,20 @@ static BaseType_t cmd_eeRead( char *pcWriteBuffer, size_t xWriteBufferLen, const
 		if (res == pdTRUE)
 		{
 			// 输出数据
-			snprintf(pcWriteBuffer, xWriteBufferLen, "%02X %02X %02X %02X %02X %02X %02X %02X \r\n",
+			snprintf(WriteBuffer, sizeof(WriteBuffer), "%02X %02X %02X %02X %02X %02X %02X %02X \r\n",
 					Buffer[0], Buffer[1], Buffer[2], Buffer[3], Buffer[4], Buffer[5], Buffer[6], Buffer[7]);
 		}
 		else
 		{
 			// 读取EEPROM失败
-			snprintf(pcWriteBuffer, xWriteBufferLen, "Read failed!\r\n");
+			snprintf(WriteBuffer, sizeof(WriteBuffer), "Read failed!\r\n");
 		}
+
+		// offset增加
+		offset += sublength;
+
+		strcat(pcWriteBuffer, WriteBuffer);
 	}
-
-
 
 	return pdFALSE;
 }

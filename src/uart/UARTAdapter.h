@@ -71,6 +71,7 @@
 #define SERIAL_COMMS_H
 
 #include "stm32f10x.h"
+#include <FreeRTOS.h>
 
 typedef void * xComPortHandle;
 
