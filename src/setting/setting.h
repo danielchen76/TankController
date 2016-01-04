@@ -9,7 +9,7 @@
 #define SETTING_SETTING_H_
 
 #include <FreeRTOS.h>
-#include "..\uart\FreeRTOS_CLI.h"
+#include <FreeRTOS_CLI.h>
 
 
 BaseType_t InitSetting();

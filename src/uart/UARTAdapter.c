@@ -265,6 +265,11 @@ signed portBASE_TYPE xReturn;
 
 	return xReturn;
 }
+
+unsigned portBASE_TYPE xGetBufferAvailable()
+{
+	return uxQueueSpacesAvailable(xCharsForTx);
+}
 /*-----------------------------------------------------------*/
 
 void vSerialClose( xComPortHandle xPort )

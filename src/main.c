@@ -22,6 +22,8 @@
 #include "i2c/tc_i2c.h"
 #include "i2c/stm32_eval_i2c_ee.h"
 #include "setting/setting.h"
+#include "tc_rtc.h"
+#include "logTask.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -44,14 +46,18 @@
 #pragma GCC diagnostic ignored "-Wreturn-type"
 
 // 堆栈大小
-#define MAIN_TASK_STACK_SIZE		2048
-#define TEMP_TASK_STACK_SIZE		2048
-#define WATERLEVEL_TASK_STACK_SIZE	2048
+#define MAIN_TASK_STACK_SIZE		1000
+#define TEMP_TASK_STACK_SIZE		500
+#define WATERLEVEL_TASK_STACK_SIZE	500
 #define LED_TASK_STACK_SIZE			configMINIMAL_STACK_SIZE
+#define LOG_TASK_STACK_SIZE			500
 
 // 主线程，初始化使用，以及所有的主消息处理
 static void MainTask( void * pvParameters)
 {
+	// RTC
+	InitRTC();
+
 	// 初始化消息数组和所有消息队列
 	InitMsgArray();
 	InitMainMsgQueue();
@@ -69,6 +75,10 @@ static void MainTask( void * pvParameters)
 	// 初始化Shell
 	InitShell();
 	EnableBluetooth(pdTRUE);		// TODO: 需要最后再确定是否默认开启蓝牙模块，还是通过手动方式开启。
+
+	// 初始化日志
+	InitLogTask();
+	xTaskCreate(LogTask, "LogTask", LOG_TASK_STACK_SIZE, NULL, 1, NULL);
 
 	// 初始化所有GPIO口
 	InitPowerGPIO();

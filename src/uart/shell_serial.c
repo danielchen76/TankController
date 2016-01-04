@@ -14,8 +14,10 @@
 
 // 各个模块的头文件，用来包含shell命令函数入口
 #include "setting/setting.h"
+#include "tc_rtc.h"
+#include "logTask.h"
 
-#define mainUART_COMMAND_CONSOLE_STACK_SIZE		( configMINIMAL_STACK_SIZE * 10 )
+#define mainUART_COMMAND_CONSOLE_STACK_SIZE		( 500 )
 #define mainUART_COMMAND_CONSOLE_TASK_PRIORITY  	1
 
 
@@ -38,11 +40,39 @@ const CLI_Command_Definition_t cmd_def_test =
 	2
 };
 
+static BaseType_t prvQueryHeapCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	/* Remove compile time warnings about unused parameters, and check the
+	write buffer is not NULL.  NOTE - for simplicity, this example assumes the
+	write buffer length is adequate, so does not check for buffer overflows. */
+	( void ) pcCommandString;
+	( void ) xWriteBufferLen;
+	configASSERT( pcWriteBuffer );
+
+	sprintf( pcWriteBuffer, "Current free heap %d bytes, minimum ever free heap %d bytes\r\n", ( int ) xPortGetFreeHeapSize(), ( int ) xPortGetMinimumEverFreeHeapSize() );
+
+	/* There is no more data to return after this single string, so return
+	pdFALSE. */
+	return pdFALSE;
+}
+
+/* Structure that defines the "query_heap" command line command. */
+static const CLI_Command_Definition_t xQueryHeap =
+{
+	"query-heap",
+	"\r\nquery-heap:\r\n Displays the free heap space, and minimum ever free heap space.\r\n",
+	prvQueryHeapCommand, /* The function to run. */
+	0 /* The user can enter any number of commands. */
+};
+
 // Command entries
 static const CLI_Command_Definition_t* commands[] =
 {
 	&cmd_def_test,
+	&xQueryHeap,
 	&cmd_def_eeRead,
+	&cmd_def_time,
+	&cmd_def_log,
 };
 
 void vRegisterCLICommands( void )

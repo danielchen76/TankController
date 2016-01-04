@@ -24,4 +24,9 @@ void InitUltraSoundSensors( void );
 // 获取指定缸的水位（传感器距离水面距离）
 BaseType_t GetDistance(uint8_t Port, uint16_t* pData);
 
+
+// 日志从串口输出
+void vOutputString( const char * const pcMessage );
+uint32_t xGetBufferAvailable();
+
 #endif /* UART_TC_SERIAL_H_ */

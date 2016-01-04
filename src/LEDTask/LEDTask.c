@@ -5,13 +5,15 @@
  *      Author: daniel
  */
 
+#include <FreeRTOS_CLI.h>
 #include "LEDTask.h"
 #include "Msg.h"
 #include <queue.h>
 #include <task.h>
 
 #include "stm32f10x.h"
-#include "..\uart\FreeRTOS_CLI.h"
+
+#include "logTask.h"
 
 // 定义队列大小
 QueueHandle_t		led_queue;
@@ -73,6 +75,7 @@ void LEDTask( void * pvParameters)
 		}
 
 		vTaskDelay(usON / portTICK_RATE_MS);
+		LogOutput(LOG_INFO, "LED on.");
 		INTERNAL_LED_ON;
 
 		vTaskDelay(usOFF / portTICK_RATE_MS);

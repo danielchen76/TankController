@@ -41,6 +41,7 @@
  */
 
 /* Standard includes. */
+#include <FreeRTOS_CLI.h>
 #include <string.h>
 #include <stdint.h>
 
@@ -49,7 +50,6 @@
 #include "task.h"
 
 /* Utils includes. */
-#include "FreeRTOS_CLI.h"
 
 typedef struct xCOMMAND_INPUT_LIST
 {

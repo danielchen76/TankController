@@ -81,6 +81,8 @@ void InitUltraSoundSensors(void)
 	/* Configure USART */
 	USART_Init(USARTwl, &USART_InitStructure);
 
+	// TODO:中断初始化
+
 	/* Enable the USART */
 	USART_Cmd(USARTwl, ENABLE);
 }

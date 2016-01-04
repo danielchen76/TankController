@@ -16,6 +16,9 @@
 // 消息ID，主处理线程和GUI处理线程，以及其他处理线程，共用一个消息枚举，消息内存也一起合并定义
 typedef enum
 {
+	MSG_UNUSED,					// 标记消息没有使用
+	MSG_USED,					// 分配后，还没有赋值前使用
+
 	MSG_MAIN_TANK_TEMP,
 	MSG_SUB_TANK_TEMP,
 	MSG_MAIN_WATER_LEVEL,
@@ -48,8 +51,8 @@ typedef union
 
 	struct Msg_WaterLevel
 	{
-		int16_t		level;			// Unit:mm
-		int16_t		levelAgv;		// 过去N秒的平均水位
+		uint16_t	level;		// Unit:mm
+		uint16_t	levelAgv;		// 过去N秒的平均水位
 
 	}	WaterLevel;
 
@@ -109,17 +112,17 @@ void InitMsgArray();
 Msg* MallocMsg();
 void FreeMsg(Msg* pMsg);
 
-#define MSG_SEND(p)		xQueueSendToBack(&main_queue, (void*)p, portMAX_DELAY)
-#define MSG_SEND_I(p)	xQueueSendToBackFromISR(&main_queue, (void*)p, pdFALSE)
+#define MSG_SEND(p)		xQueueSendToBack(main_queue, (void*)&p, portMAX_DELAY)
+#define MSG_SEND_I(p)	xQueueSendToBackFromISR(main_queue, (void*)&p, pdFALSE)
 
-#define GUI_MSG_SEND(p)		xQueueSendToBack(&gui_queue, (void*)p, portMAX_DELAY)
-#define GUI_MSG_SEND_I(p)	xQueueSendToBackFromISR(&gui_queue, (void*)p, pdFALSE)
+#define GUI_MSG_SEND(p)		xQueueSendToBack(gui_queue, (void*)&p, portMAX_DELAY)
+#define GUI_MSG_SEND_I(p)	xQueueSendToBackFromISR(gui_queue, (void*)&p, pdFALSE)
 
 // 每个queue外部定义
 extern QueueHandle_t		gui_queue;
 extern QueueHandle_t		main_queue;
-extern QueueHandle_t		log_queue;
-extern QueueHandle_t		file_queue;
+extern QueueHandle_t		waterlevel_queue;
+extern QueueHandle_t		temp_queue;
 
 //extern QueueHandle_t		sensor_queue;
 

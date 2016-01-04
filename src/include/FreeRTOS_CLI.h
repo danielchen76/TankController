@@ -40,6 +40,8 @@
  *
  */
 
+#include <FreeRTOS.h>
+
 #ifndef COMMAND_INTERPRETER_H
 #define COMMAND_INTERPRETER_H
 

@@ -12,7 +12,7 @@
 #include <queue.h>
 #include <string.h>
 
-// 定义队列大小（温度控制用）
+// 定义队列大小（水位控制用）
 QueueHandle_t		waterlevel_queue;
 const UBaseType_t 	uxWaterLevelQueueSize = 10;			// 考虑到会手工控制抽水和补水，所以将消息队列加大
 

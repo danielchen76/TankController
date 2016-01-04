@@ -72,6 +72,7 @@
  */
 
 /* Standard includes. */
+#include <FreeRTOS_CLI.h>
 #include "string.h"
 #include "stdio.h"
 
@@ -81,9 +82,6 @@
 #include "semphr.h"
 
 /* Example includes. */
-#include "FreeRTOS_CLI.h"
-
-/* Demo application includes. */
 #include "UARTAdapter.h"
 
 /* Dimensions the buffer into which input characters are placed. */
