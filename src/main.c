@@ -24,6 +24,7 @@
 #include "setting/setting.h"
 #include "tc_rtc.h"
 #include "logTask.h"
+#include "tc_spi.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -57,6 +58,9 @@ static void MainTask( void * pvParameters)
 {
 	// RTC
 	InitRTC();
+
+	// SPI flash和文件系统
+	InitSpiffs();
 
 	// 初始化消息数组和所有消息队列
 	InitMsgArray();

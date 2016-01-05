@@ -18,6 +18,7 @@
 #include "stm32f10x.h"
 
 #include "../uart/tc_serial.h"
+#include <spiffs.h>
 
 // 定义队列大小（日志任务用）
 QueueHandle_t		log_queue;
@@ -200,6 +201,33 @@ void OutputLogs(const char* pLog)
 }
 
 static char		s_LogText[LOG_RECORD_SIZE + 23 + 2];		// 包含“\r\n”
+static int			s_FileNo = -1;
+static spiffs_file	s_LogFile = 0;
+
+extern	spiffs fs;
+
+spiffs_file GetLogFile(int mday)
+{
+	char	szFileName[4];
+
+	if (mday != s_FileNo)
+	{
+		// 日期变化，需要更换文件
+		if (s_LogFile > 0)
+		{
+			// 先关闭文件
+			SPIFFS_close(&fs, s_LogFile);
+		}
+
+		// 打开新文件
+		sprintf(szFileName, "L%02d", mday);
+		s_LogFile = SPIFFS_open(&fs, szFileName, SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
+
+		// 读取文件前面的时间，判断该文件是否是今天的，如果不是则清除
+
+	}
+	return 0;
+}
 
 void WriteLogs(LogMsg* pLog)
 {

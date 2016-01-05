@@ -51,6 +51,7 @@ void Switch_MainPump(BaseType_t bOn)
 	SWITCH(bOn, MAINPUMP);
 }
 
+// 蛋白质分离器
 #define PROTEINSKIMMER_GPIO		GPIOG
 #define PROTEINSKIMMER_PIN		GPIO_Pin_9
 void Switch_ProteinSkimmer(BaseType_t bOn)
@@ -58,6 +59,7 @@ void Switch_ProteinSkimmer(BaseType_t bOn)
 	SWITCH(bOn, PROTEINSKIMMER);
 }
 
+// 主缸造浪泵
 #define WAVEMAKER_GPIO			GPIOG
 #define WAVEMAKER_PIN			GPIO_Pin_10
 void Switch_WaveMaker(BaseType_t bOn)
@@ -65,6 +67,7 @@ void Switch_WaveMaker(BaseType_t bOn)
 	SWITCH(bOn, WAVEMAKER);
 }
 
+// 主缸造浪泵（夜间模式，备用模式）
 #define WAVEMAKER_NIGHTMODE_GPIO	GPIOG
 #define WAVEMAKER_NIGHTMODE_PIN		GPIO_Pin_11
 void Switch_WaveMakerNightMode(BaseType_t bOn)
@@ -72,6 +75,7 @@ void Switch_WaveMakerNightMode(BaseType_t bOn)
 	SWITCH(bOn, WAVEMAKER_NIGHTMODE);
 }
 
+// 底缸造浪泵
 #define SUB_WAVEMAKER_GPIO		GPIOG
 #define SUB_WAVEMAKER_PIN		GPIO_Pin_12
 void Switch_SubWaveMaker(BaseType_t bOn)
@@ -79,6 +83,7 @@ void Switch_SubWaveMaker(BaseType_t bOn)
 	SWITCH(bOn, SUB_WAVEMAKER);
 }
 
+// RO补水泵（12V）
 #define RO_PUMP_GPIO		GPIOG
 #define RO_PUMP_PIN			GPIO_Pin_13
 void Switch_RoPump(BaseType_t bOn)
@@ -86,6 +91,7 @@ void Switch_RoPump(BaseType_t bOn)
 	SWITCH(bOn, RO_PUMP);
 }
 
+// RO外置备份补水泵（12V）
 #define BACKUP_RO_PUMP_GPIO		GPIOG
 #define BACKUP_RO_PUMP_PIN		GPIO_Pin_14
 void Switch_BackupRoPump(BaseType_t bOn)
@@ -93,6 +99,7 @@ void Switch_BackupRoPump(BaseType_t bOn)
 	SWITCH(bOn, BACKUP_RO_PUMP);
 }
 
+// 海水排水泵
 #define SEA_PUMP_OUT_GPIO		GPIOG
 #define SEA_PUMP_OUT_PIN		GPIO_Pin_15
 void Switch_SeaPumpOut(BaseType_t bOn)
@@ -100,6 +107,7 @@ void Switch_SeaPumpOut(BaseType_t bOn)
 	SWITCH(bOn, SEA_PUMP_OUT);
 }
 
+// 海水外部补水泵
 #define SEA_PUMP_IN_GPIO		GPIOE
 #define SEA_PUMP_IN_PIN			GPIO_Pin_8
 void Switch_SeaPumpIn(BaseType_t bOn)
@@ -107,8 +115,10 @@ void Switch_SeaPumpIn(BaseType_t bOn)
 	SWITCH(bOn, SEA_PUMP_IN);
 }
 
+// ========================================================================
 // 220V设备
 // 常开
+// T5HO灯管（两根一起控制）
 #define T5HO_1_GPIO				GPIOG
 #define T5HO_2_GPIO				GPIOG
 #define T5HO_1_PIN				GPIO_Pin_0
@@ -120,6 +130,7 @@ void Switch_T5H0(BaseType_t bOn)
 	SWITCH(bOn, T5HO_2);
 }
 
+// 加热棒（一）
 #define HEATER_1_GPIO			GPIOG
 #define HEATER_2_GPIO			GPIOG
 #define HEATER_1_PIN			GPIO_Pin_1
@@ -129,12 +140,14 @@ void Switch_Heater1(BaseType_t bOn)
 	SWITCH(bOn, HEATER_1);
 }
 
+// 加热棒（二）
 void Switch_Hearter2(BaseType_t bOn)
 {
 	SWITCH(bOn, HEATER_2);
 }
 
 // 常闭
+// 冷水机
 #define COLDER_GPIO				GPIOG
 #define COLDER_PIN				GPIO_Pin_4
 void Switch_Colder(BaseType_t bOn)
@@ -142,6 +155,7 @@ void Switch_Colder(BaseType_t bOn)
 	SWITCH(!bOn, COLDER);
 }
 
+// 主缸灯光
 #define MAIN_LIGHT_GPIO			GPIOG
 #define MAIN_LIGHT_PIN			GPIO_Pin_5
 void Switch_MainLight(BaseType_t bOn)
@@ -149,6 +163,7 @@ void Switch_MainLight(BaseType_t bOn)
 	SWITCH(!bOn, MAIN_LIGHT);
 }
 
+// 底缸灯
 #define SUB_LIGHT_GPIO			GPIOG
 #define SUB_LIGHT_PIN			GPIO_Pin_6
 void Switch_SubLight(BaseType_t bOn)
@@ -156,4 +171,5 @@ void Switch_SubLight(BaseType_t bOn)
 	SWITCH(!bOn, SUB_LIGHT);
 }
 
+// 备用插座（常开）
 

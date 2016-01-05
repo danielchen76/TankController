@@ -37,8 +37,9 @@ static uint8_t s_BufferPos;
 // 初始化超声波传感器使用的UART，和需要进行多路分配使用的GPIO口
 void InitUltraSoundSensors(void)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
-	USART_InitTypeDef USART_InitStructure;
+	GPIO_InitTypeDef 	GPIO_InitStructure;
+	USART_InitTypeDef 	USART_InitStructure;
+	NVIC_InitTypeDef 	NVIC_InitStructure;
 
 	/* Enable USART Clock */
 	RCC_APB1PeriphClockCmd(USARTwl_CLK, ENABLE);
@@ -81,7 +82,12 @@ void InitUltraSoundSensors(void)
 	/* Configure USART */
 	USART_Init(USARTwl, &USART_InitStructure);
 
-	// TODO:中断初始化
+	// 中断初始化
+	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 
 	/* Enable the USART */
 	USART_Cmd(USARTwl, ENABLE);

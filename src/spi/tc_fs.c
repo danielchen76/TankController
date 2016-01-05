@@ -7,6 +7,7 @@
 
 
 #include <spiffs.h>
+#include <tc_spi.h>
 #include "spi_flash.h"
 
 #define LOG_PAGE_SIZE       256
@@ -43,9 +44,16 @@ static s32_t fs_spiffs_erase(u32_t addr, u32_t size)
 	return SPIFFS_OK;
 }
 
-int InitSpiffs( void )
+void InitSpiffs( void )
 {
 	spiffs_config cfg;
+	__IO uint32_t FlashID = 0;
+
+	/* Initialize the SPI FLASH driver */
+	sFLASH_Init();
+
+	/* Get SPI Flash ID */
+	FlashID = sFLASH_ReadID();
 
 	cfg.phys_size = 16 * 1024 * 1024; 	// use all spi flashn (16MB spi flash)
 	cfg.phys_addr = 0; 					// start spiffs at start of spi flash
@@ -60,13 +68,12 @@ int InitSpiffs( void )
 	int res = SPIFFS_mount(&fs, &cfg, spiffs_work_buf, spiffs_fds,
 			sizeof(spiffs_fds), spiffs_cache_buf, sizeof(spiffs_cache_buf), 0);
 	//printf("mount res: %i\n", res);
-
-	return 0;
 }
 
-static void test_spiffs()
+void test_spiffs()
 {
 	char buf[12];
+	char buf1[12];
 
 	// Surely, I've mounted spiffs before entering here
 
@@ -79,8 +86,10 @@ static void test_spiffs()
 	}
 	SPIFFS_close(&fs, fd);
 
+	memset(buf1, 0, sizeof(buf1));
+
 	fd = SPIFFS_open(&fs, "my_file", SPIFFS_RDWR, 0);
-	if (SPIFFS_read(&fs, fd, (u8_t *) buf, 12) < 0)
+	if (SPIFFS_read(&fs, fd, (u8_t *) buf1, 12) < 0)
 	{
 		//printf("errno %i\n", SPIFFS_errno(&fs));
 		buf[0] = 0;
@@ -91,9 +100,3 @@ static void test_spiffs()
 	buf[0] = 0;
 }
 
-void testfs( void )
-{
-	InitSpiffs();
-
-	test_spiffs();
-}

@@ -25,7 +25,7 @@ void InitSensorsGPIO()
 
 	// 底缸紧急水位传感器（磁铁）
 
-	// Debug开关（两位拨码开关）
+	// Debug开关（两位拨码开关）PF14 PF15
 
 	// 旋转编码器（两个方向检测用，一个按键）
 
@@ -45,3 +45,40 @@ void InitRotaryEncoderGPIO()
 {
 
 }
+
+// GPIO中断
+void EXTI0_IRQHandler(void)
+{
+
+}
+
+void EXTI1_IRQHandler(void)
+{
+
+}
+
+void EXTI2_IRQHandler(void)
+{
+
+}
+
+void EXTI3_IRQHandler(void)
+{
+
+}
+
+void EXTI4_IRQHandler(void)
+{
+
+}
+
+void EXTI9_5_IRQHandler(void)
+{
+
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+
+}
+
