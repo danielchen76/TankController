@@ -5,8 +5,8 @@
  *      Author: daniel
  */
 
-#ifndef GPIO_TC_GPIO_H_
-#define GPIO_TC_GPIO_H_
+#ifndef INCLUDE_TC_GPIO_H_
+#define INCLUDE_TC_GPIO_H_
 
 #include <FreeRTOS.h>
 #include "stm32f10x.h"
@@ -38,4 +38,4 @@ void Switch_Heater1(BaseType_t bOn);
 void Switch_Hearter2(BaseType_t bOn);
 
 
-#endif /* GPIO_TC_GPIO_H_ */
+#endif /* INCLUDE_TC_GPIO_H_ */

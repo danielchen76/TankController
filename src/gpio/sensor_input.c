@@ -7,7 +7,7 @@
  *      Author: daniel
  */
 
-#include "tc_gpio.h"
+#include <tc_gpio.h>
 
 void InitSensorsGPIO()
 {

@@ -5,8 +5,8 @@
  *      Author: daniel
  */
 
-#ifndef I2C_TC_I2C_H_
-#define I2C_TC_I2C_H_
+#ifndef INCLUDE_TC_I2C_H_
+#define INCLUDE_TC_I2C_H_
 
 #include <FreeRTOS.h>
 #include "stm32f10x.h"
@@ -65,4 +65,4 @@ BaseType_t EEPROM_Read(uint16_t offset, uint8_t* pData, uint16_t length);
 void EEPROM_Write(uint16_t offset, uint8_t* pData, uint16_t length);
 
 
-#endif /* I2C_TC_I2C_H_ */
+#endif /* INCLUDE_TC_I2C_H_ */

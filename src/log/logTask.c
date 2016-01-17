@@ -17,8 +17,8 @@
 
 #include "stm32f10x.h"
 
-#include "../uart/tc_serial.h"
 #include <spiffs.h>
+#include "tc_serial.h"
 
 // 定义队列大小（日志任务用）
 QueueHandle_t		log_queue;
@@ -204,13 +204,15 @@ static char		s_LogText[LOG_RECORD_SIZE + 23 + 2];		// 包含“\r\n”
 static int			s_FileNo = -1;
 static spiffs_file	s_LogFile = 0;
 
+static char		s_TempDate[11];
+
 extern	spiffs fs;
 
-spiffs_file GetLogFile(int mday)
+void GetLogFile(int mon, int mday)
 {
 	char	szFileName[4];
 
-	if (mday != s_FileNo)
+	if ((s_FileNo < 0) || (mday != s_FileNo))
 	{
 		// 日期变化，需要更换文件
 		if (s_LogFile > 0)
@@ -219,14 +221,20 @@ spiffs_file GetLogFile(int mday)
 			SPIFFS_close(&fs, s_LogFile);
 		}
 
+		s_FileNo = mday;
+
 		// 打开新文件
 		sprintf(szFileName, "L%02d", mday);
-		s_LogFile = SPIFFS_open(&fs, szFileName, SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
+		s_LogFile = SPIFFS_open(&fs, szFileName, SPIFFS_CREAT | SPIFFS_RDWR, 0);
 
-		// 读取文件前面的时间，判断该文件是否是今天的，如果不是则清除
+		// 读取文件前面的时间，判断该文件是否是今天的，如果不是则清除（关闭，然后SPIFFS_TRUNC打开）
+		int ret = SPIFFS_read(&fs, s_LogFile, (uint8_t*)s_TempDate, 10);
 
+		if (ret == 10)
+		{
+			// 分析月份和日期，年份不管（日志存储一个月）
+		}
 	}
-	return 0;
 }
 
 void WriteLogs(LogMsg* pLog)

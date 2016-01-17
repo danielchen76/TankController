@@ -5,8 +5,8 @@
  *      Author: daniel
  */
 
-#ifndef UART_TC_SERIAL_H_
-#define UART_TC_SERIAL_H_
+#ifndef INCLUDE_TC_SERIAL_H_
+#define INCLUDE_TC_SERIAL_H_
 
 #include <FreeRTOS.h>
 #include "FreeRTOS_CLI.h"
@@ -29,4 +29,4 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData);
 void vOutputString( const char * const pcMessage );
 uint32_t xGetBufferAvailable();
 
-#endif /* UART_TC_SERIAL_H_ */
+#endif /* INCLUDE_TC_SERIAL_H_ */

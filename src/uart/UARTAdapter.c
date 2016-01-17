@@ -231,32 +231,30 @@ void vSerialPutString(xComPortHandle pxPort, const signed char * const pcString,
 	{
 		xSerialPutChar(pxPort, *pxNext, serTX_BLOCK_TIME);
 	}
-//	while (*pxNext)
-//	{
-//		xSerialPutChar(pxPort, *pxNext, serTX_BLOCK_TIME);
-//		pxNext++;
+}
+
+//void UART_write(USART_TypeDef* USARTx, volatile char *s){
+//
+//	while(*s){
+//		// wait until data register is empty
+//		while( !(USARTx->SR & 0x00000040) );
+//		USART_SendData(USARTx, *s);
+//		*(s++);
 //	}
-}
-
-void UART_write(USART_TypeDef* USARTx, volatile char *s){
-
-	while(*s){
-		// wait until data register is empty
-		while( !(USARTx->SR & 0x00000040) );
-		USART_SendData(USARTx, *s);
-		*(s++);
-	}
-}
+//}
 /*-----------------------------------------------------------*/
 
-signed portBASE_TYPE xSerialPutChar( xComPortHandle pxPort, signed char cOutChar, TickType_t xBlockTime )
+signed portBASE_TYPE xSerialPutChar(xComPortHandle pxPort, signed char cOutChar,
+		TickType_t xBlockTime)
 {
-signed portBASE_TYPE xReturn;
+	(void)pxPort;
 
-	if( xQueueSend( xCharsForTx, &cOutChar, xBlockTime ) == pdPASS )
+	signed portBASE_TYPE xReturn;
+
+	if ( xQueueSend( xCharsForTx, &cOutChar, xBlockTime ) == pdPASS)
 	{
 		xReturn = pdPASS;
-		USART_ITConfig( USARTsh, USART_IT_TXE, ENABLE );
+		USART_ITConfig( USARTsh, USART_IT_TXE, ENABLE);
 	}
 	else
 	{
@@ -274,6 +272,7 @@ unsigned portBASE_TYPE xGetBufferAvailable()
 
 void vSerialClose( xComPortHandle xPort )
 {
+	(void)xPort;
 	/* Not supported as not required by the demo application. */
 }
 /*-----------------------------------------------------------*/

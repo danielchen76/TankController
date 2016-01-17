@@ -7,9 +7,9 @@
  *      E2PROM, for saving setting on two block
  */
 
-#include "tc_i2c.h"
 #include "stm32_eval_i2c_ee.h"
 #include <task.h>
+#include <tc_i2c.h>
 
 DMA_InitTypeDef   sEEDMA_InitStructure;
 

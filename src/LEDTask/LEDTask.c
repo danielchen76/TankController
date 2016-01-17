@@ -5,8 +5,7 @@
  *      Author: daniel
  */
 
-#include <FreeRTOS_CLI.h>
-#include "LEDTask.h"
+#include <LEDTask.h>
 #include "Msg.h"
 #include <queue.h>
 #include <task.h>
@@ -95,3 +94,22 @@ void SetDebugLED(BaseType_t bOn)
 	bOn ? INTERNAL_LED_ON : INTERNAL_LED_OFF;
 }
 
+// 手动清除内部LED的告警状态
+static BaseType_t cmd_clearErr( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	(void)pcCommandString;
+
+	SetErrorLED(pdFALSE);
+	snprintf(pcWriteBuffer, xWriteBufferLen, "Clear LED error state.\r\n");
+
+	return pdFALSE;
+}
+
+
+const CLI_Command_Definition_t cmd_def_clearErr =
+{
+	"clearErr",
+	"\r\nclearErr\r\n Clear internal LED error state.\r\n",
+	cmd_clearErr, /* The function to run. */
+	0
+};

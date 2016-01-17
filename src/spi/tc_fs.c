@@ -47,25 +47,24 @@ static s32_t fs_spiffs_erase(u32_t addr, u32_t size)
 void InitSpiffs( void )
 {
 	spiffs_config cfg;
-	__IO uint32_t FlashID = 0;
 
 	/* Initialize the SPI FLASH driver */
 	sFLASH_Init();
 
 	/* Get SPI Flash ID */
-	FlashID = sFLASH_ReadID();
+//	FlashID = sFLASH_ReadID();
 
-	cfg.phys_size = 16 * 1024 * 1024; 	// use all spi flashn (16MB spi flash)
-	cfg.phys_addr = 0; 					// start spiffs at start of spi flash
-	cfg.phys_erase_block = 4 * 1024; 	// according to datasheet
-	cfg.log_block_size = 4 * 1024; 		// let us not complicate things
-	cfg.log_page_size = LOG_PAGE_SIZE; 	// as we said
+//	cfg.phys_size = 16 * 1024 * 1024; 	// use all spi flashn (16MB spi flash)
+//	cfg.phys_addr = 0; 					// start spiffs at start of spi flash
+//	cfg.phys_erase_block = 4 * 1024; 	// according to datasheet
+//	cfg.log_block_size = 4 * 1024; 		// let us not complicate things
+//	cfg.log_page_size = LOG_PAGE_SIZE; 	// as we said
 
 	cfg.hal_read_f = fs_spiffs_read;
 	cfg.hal_write_f = fs_spiffs_write;
 	cfg.hal_erase_f = fs_spiffs_erase;
 
-	int res = SPIFFS_mount(&fs, &cfg, spiffs_work_buf, spiffs_fds,
+	SPIFFS_mount(&fs, &cfg, spiffs_work_buf, spiffs_fds,
 			sizeof(spiffs_fds), spiffs_cache_buf, sizeof(spiffs_cache_buf), 0);
 	//printf("mount res: %i\n", res);
 }

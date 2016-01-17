@@ -19,11 +19,13 @@ typedef enum
 	MSG_UNUSED,					// 标记消息没有使用
 	MSG_USED,					// 分配后，还没有赋值前使用
 
+	// 水位和温度更新消息
 	MSG_MAIN_TANK_TEMP,
 	MSG_SUB_TANK_TEMP,
-	MSG_MAIN_WATER_LEVEL,
+	MSG_MAIN_WATER_LEVEL,		// 这3个消息顺序依赖4052的Port顺序，所以不能随意调整
 	MSG_SUB_WATER_LEVEL,
 	MSG_RO_WATER_LEVEL,
+	MSG_SUB_WATER_LEVEL_REF,	// 底缸稳定水位参考值，记录到EEPROM，掉电重启，或者暂停重启后，使用这个作为补水（RO）参考
 
 	// 开关控制
 	MSG_RO_WATER_PUMP,			// RO补水泵
@@ -51,7 +53,7 @@ typedef union
 
 	struct Msg_WaterLevel
 	{
-		uint16_t	level;		// Unit:mm
+		uint16_t	level;			// Unit:mm
 		uint16_t	levelAgv;		// 过去N秒的平均水位
 
 	}	WaterLevel;

@@ -7,9 +7,8 @@
  *      UltraSound sensor, for water level.
  */
 
-#include "tc_serial.h"
-
 #include "stm32f10x.h"
+#include "tc_serial.h"
 
 #include <task.h>
 

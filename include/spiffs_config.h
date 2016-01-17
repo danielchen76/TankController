@@ -141,17 +141,17 @@ typedef uint8_t u8_t;
 // on the target. This will reduce calculations, flash and memory accesses.
 // Parts of configuration must be defined below instead of at time of mount.
 #ifndef SPIFFS_SINGLETON
-#define SPIFFS_SINGLETON 0
+#define SPIFFS_SINGLETON 1
 #endif
 
 #if SPIFFS_SINGLETON
 // Instead of giving parameters in config struct, singleton build must
 // give parameters in defines below.
 #ifndef SPIFFS_CFG_PHYS_SZ
-#define SPIFFS_CFG_PHYS_SZ(ignore)        (1024*1024*2)
+#define SPIFFS_CFG_PHYS_SZ(ignore)        (16 * 1024 * 1024)
 #endif
 #ifndef SPIFFS_CFG_PHYS_ERASE_SZ
-#define SPIFFS_CFG_PHYS_ERASE_SZ(ignore)  (65536)
+#define SPIFFS_CFG_PHYS_ERASE_SZ(ignore)  (4 * 1024)
 #endif
 #ifndef SPIFFS_CFG_PHYS_ADDR
 #define SPIFFS_CFG_PHYS_ADDR(ignore)      (0)
@@ -160,7 +160,7 @@ typedef uint8_t u8_t;
 #define SPIFFS_CFG_LOG_PAGE_SZ(ignore)    (256)
 #endif
 #ifndef SPIFFS_CFG_LOG_BLOCK_SZ
-#define SPIFFS_CFG_LOG_BLOCK_SZ(ignore)   (65536)
+#define SPIFFS_CFG_LOG_BLOCK_SZ(ignore)   (4 * 1024)
 #endif
 #endif
 

@@ -7,7 +7,7 @@
  *      Author: daniel
  */
 
-#include "tc_gpio.h"
+#include <tc_gpio.h>
 
 void InitPowerGPIO()
 {
@@ -20,7 +20,7 @@ void InitPowerGPIO()
 	/* GPIOG Periph clock enable */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOG, ENABLE);
 
-	/* Configure PD0 and PD2 in output pushpull mode */
+	/* Configure all pin in output pushpull mode */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_All;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
@@ -44,6 +44,7 @@ void InitPowerGPIO()
 #define SWITCH(on, device) 		on ? GPIO_SetBits(device##_GPIO, device##_PIN) : GPIO_ResetBits(device##_GPIO, device##_PIN)
 
 // 24v/12v低压设备开关
+// 主上水泵
 #define MAINPUMP_GPIO		GPIOG
 #define MAINPUMP_PIN		GPIO_Pin_8
 void Switch_MainPump(BaseType_t bOn)
@@ -89,6 +90,8 @@ void Switch_SubWaveMaker(BaseType_t bOn)
 void Switch_RoPump(BaseType_t bOn)
 {
 	SWITCH(bOn, RO_PUMP);
+
+	// 同时开启/关闭电磁阀
 }
 
 // RO外置备份补水泵（12V）
@@ -97,6 +100,9 @@ void Switch_RoPump(BaseType_t bOn)
 void Switch_BackupRoPump(BaseType_t bOn)
 {
 	SWITCH(bOn, BACKUP_RO_PUMP);
+
+	// 同时开启/关闭电磁阀
+
 }
 
 // 海水排水泵
@@ -113,6 +119,14 @@ void Switch_SeaPumpOut(BaseType_t bOn)
 void Switch_SeaPumpIn(BaseType_t bOn)
 {
 	SWITCH(bOn, SEA_PUMP_IN);
+}
+
+// 24V（开关电源）和 24V（备用电源）切换
+#define BACKUP_POWER_GPIO		GPIOE
+#define BACKUP_POWER_PIN		GPIO_Pin_9
+void Swtich_BackupPower(BaseType_t bOn)
+{
+	SWITCH(bOn, BACKUP_POWER);
 }
 
 // ========================================================================

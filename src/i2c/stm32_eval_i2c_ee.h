@@ -29,7 +29,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "tc_i2c.h"
+#include <tc_i2c.h>
 
 /** @addtogroup Utilities
   * @{

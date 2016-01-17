@@ -5,33 +5,16 @@
  *      Author: daniel
  */
 
+#include <setting.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <tc_i2c.h>
 
-#include "setting.h"
-#include "../i2c/tc_i2c.h"
+#include "const.h"
 
-// 注意：因为I2C DMA的问题，只能读取至少2个字节数据，所有所有的配置项必须大于等于2字节
-typedef struct
-{
-	// 温度配置
-	uint16_t		usLowTemperature;		// 最低温度，单位：0.01℃
-	uint16_t		usHighTemperature;		// 最高温：0.01℃
-	uint16_t		usTemperatureOffset;	// 温度调整量：0.01℃
-
-	// 水位高度配置（每次根据换水启动后自动计算获得，如果是意外停机或暂停而重启的，则从该配置项读取，也可以人工控制该配置项）
-	// 配置是指实际超声波探头测量的水位（如果要显示，需要进行换算），单位全部都是“毫米”
-	uint16_t		usSubTankWaterLevel;
-
-	// 超声波探头离缸底的深度，用来换算实际水位的
-	uint16_t		usMainTankHeigh;
-	uint16_t		usSubTankHeigh;
-	uint16_t		usROTankHeigh;
-} TC_Setting;
-
-static TC_Setting		s_Setting;
+TC_Setting		s_Setting;
 
 static TC_Setting*		s_TempSetting = NULL;
 
@@ -67,6 +50,16 @@ void DefaultSettings()
 	s_Setting.usHighTemperature		= 2800;				// 28.00℃ 最高温度
 	s_Setting.usLowTemperature		= 2300;				// 23.00℃ 最低温度
 	s_Setting.usTemperatureOffset	= 100;				// 1.00℃
+
+	s_Setting.usSubTankWaterLevelRef	= 0;			// 默认参考水位为0，没有设置（首次运行）
+
+	s_Setting.usChangeWater			= 30 * 1000;		// 每次最多更换30升海水
+
+	s_Setting.usRoTankWaterLevel_Max	= RO_TANK_HEIGHT - 30;		//离最高水位保留3CM
+	s_Setting.usRoTankWaterLevel_Min	= 30;
+	s_Setting.usRoTankWaterLevel_Refill	= RO_TANK_HEIGHT / 2;
+	s_Setting.usRoTankWaterLevel_Warn	= RO_TANK_HEIGHT / 3;
+
 }
 
 // 装载E2PROM中的数据到内存中
@@ -252,20 +245,52 @@ BaseType_t InitSetting()
 	return pdTRUE;
 }
 
-BaseType_t Set_LowTemperature(uint16_t usTemp)
-{
-	s_Setting.usLowTemperature = usTemp;
-
-	// 保存配置到E2PROM
-	return SaveSetting(offsetof(TC_Setting, usLowTemperature), sizeof(s_Setting.usLowTemperature), pdFALSE);
-}
-
-uint16_t Get_LowTemperature()
-{
-	return s_Setting.usLowTemperature;
-}
+#define SETTING_SET_GET(setting)		\
+	BaseType_t Set_##setting(typeof(s_Setting.setting) value) \
+	{ \
+		s_Setting.setting = value; \
+		return SaveSetting(offsetof(TC_Setting, setting), sizeof(s_Setting.setting), pdFALSE); \
+	} \
+	typeof(s_Setting.setting) Get_##setting() \
+	{ \
+		return s_Setting.setting; \
+	}
 
 
+//BaseType_t Set_LowTemperature(uint16_t usTemp)
+//{
+//	s_Setting.usLowTemperature = usTemp;
+//
+//	// 保存配置到E2PROM
+//	return SaveSetting(offsetof(TC_Setting, usLowTemperature), sizeof(s_Setting.usLowTemperature), pdFALSE);
+//}
+//
+//uint16_t Get_LowTemperature()
+//{
+//	return s_Setting.usLowTemperature;
+//}
+
+// 温度配置
+SETTING_SET_GET(usLowTemperature)
+SETTING_SET_GET(usHighTemperature)
+SETTING_SET_GET(usTemperatureOffset)
+
+// 水位高度配置（每次根据换水启动后自动计算获得，如果是意外停机或暂停而重启的，则从该配置项读取，也可以人工控制该配置项）
+// 配置是指实际超声波探头测量的水位（实际水位，是经过换算后的），单位全部都是“毫米”
+SETTING_SET_GET(usSubTankWaterLevelRef)
+
+SETTING_SET_GET(usChangeWater)
+
+// RO补水缸的配置
+SETTING_SET_GET(usRoTankWaterLevel_Max)
+SETTING_SET_GET(usRoTankWaterLevel_Min)
+SETTING_SET_GET(usRoTankWaterLevel_Refill)
+SETTING_SET_GET(usRoTankWaterLevel_Warn)
+
+
+// ------------------------------------------------------------------------------------------------------
+// Shell命令
+// ------------------------------------------------------------------------------------------------------
 // 读取E2PROM中指定地址的数据（至少读取2个字节）
 static BaseType_t cmd_eeRead( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
 {
@@ -316,7 +341,7 @@ static BaseType_t cmd_eeRead( char *pcWriteBuffer, size_t xWriteBufferLen, const
 		// offset增加
 		offset += sublength;
 
-		strcat(pcWriteBuffer, WriteBuffer);
+		strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
 	}
 
 	return pdFALSE;

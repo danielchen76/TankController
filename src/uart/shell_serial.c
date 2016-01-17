@@ -7,38 +7,23 @@
  *      Author: daniel
  */
 
-#include <stdio.h>
 
+#include <stdio.h>
 #include "tc_serial.h"
+#include "setting.h"
+
 #include "UARTAdapter.h"
 
 // 各个模块的头文件，用来包含shell命令函数入口
-#include "setting/setting.h"
 #include "tc_rtc.h"
 #include "logTask.h"
+#include "LEDTask.h"
 
 #define mainUART_COMMAND_CONSOLE_STACK_SIZE		( 500 )
 #define mainUART_COMMAND_CONSOLE_TASK_PRIORITY  	1
 
 
 extern void vUARTCommandConsoleStart( uint16_t usStackSize, UBaseType_t uxPriority );
-
-// Test command
-static BaseType_t cmd_test( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
-{
-	( void )pcCommandString;
-
-	snprintf(pcWriteBuffer, xWriteBufferLen, "Test echo.\r\n");
-	return pdFALSE;
-}
-
-const CLI_Command_Definition_t cmd_def_test =
-{
-	"test",
-	"\r\ntest \r\n Test command, output test.\r\n",
-	cmd_test, /* The function to run. */
-	2
-};
 
 static BaseType_t prvQueryHeapCommand( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
 {
@@ -68,11 +53,11 @@ static const CLI_Command_Definition_t xQueryHeap =
 // Command entries
 static const CLI_Command_Definition_t* commands[] =
 {
-	&cmd_def_test,
 	&xQueryHeap,
 	&cmd_def_eeRead,
 	&cmd_def_time,
 	&cmd_def_log,
+	&cmd_def_clearErr,
 };
 
 void vRegisterCLICommands( void )

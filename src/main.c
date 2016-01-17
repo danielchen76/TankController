@@ -5,23 +5,23 @@
 
 // ----------------------------------------------------------------------------
 
+#include <LEDTask.h>
+#include <setting.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <tc_gpio.h>
+#include <tc_i2c.h>
+#include <tc_serial.h>
 #include "diag/Trace.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "LEDTask/LEDTask.h"
 #include "main/controller.h"
 #include "main/TemperatureTask.h"
 #include "main/WaterLevelTask.h"
-#include "gpio/tc_gpio.h"
 #include "msg.h"
-#include "uart/tc_serial.h"
-#include "i2c/tc_i2c.h"
 #include "i2c/stm32_eval_i2c_ee.h"
-#include "setting/setting.h"
 #include "tc_rtc.h"
 #include "logTask.h"
 #include "tc_spi.h"
