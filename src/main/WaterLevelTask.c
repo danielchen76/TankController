@@ -253,13 +253,8 @@ void ProcessWaterLevel(void* pvParameters)
 		}
 	}
 
-	// 根据当前状态进行处理
-	// 当前水位：usDistance, 平均水位：wlAvg
-	if (bChanged)
-	{
-		StateMachineRun(&s_WLStateMachine);
-	}
-
+	// 状态机执行
+	StateMachineRun(&s_WLStateMachine);
 }
 
 
