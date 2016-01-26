@@ -6,7 +6,6 @@
  */
 
 
-#include "WaterLevelTask.h"
 #include "Msg.h"
 #include "util.h"
 #include "tc_serial.h"
@@ -18,8 +17,12 @@
 
 #include <queue.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <task.h>
+#include <WaterLevelTask.h>
+
+#include "stm32f10x.h"
 
 // 定义队列大小（水位控制用）
 QueueHandle_t		waterlevel_queue;
@@ -29,6 +32,17 @@ const UBaseType_t 	uxWaterLevelQueueSize = 10;			// 考虑到会手工控制抽�
 void ProcessWaterLevel(void* pvParameters);
 
 static struStateMachine			s_WLStateMachine;
+
+// 状态机函数定义（同时也是给状态值使用）
+void* WL_StopState();
+void* WL_Init1State();
+void* WL_NormalState();
+void* WL_RORefillState();
+void* WL_ROBackupRefillState();
+
+void RefillROWaterTimer(void* pvParameters);
+void RefillBackupROWaterTimer(void* pvParameters);
+void ProteinSkimmerOnTimer(void* pvParameters);
 
 
 void InitWaterLevelMsgQueue( void )
@@ -46,10 +60,37 @@ void MsgRoBackupPumpSwitch(Msg* msg)
 	Switch_BackupRoPump(msg->Param.Switch.bOn);
 }
 
+void MsgACPowerChange(Msg* msg)
+{
+	if (msg->Param.Power.bOk)
+	{
+		// AC电源恢复，延迟一段时间后进入启动状态
+
+	}
+	else
+	{
+		// AC电源停电（关闭所有的设备）
+	}
+}
+
+void MsgBackupPowerChange(Msg* msg)
+{
+	if (msg->Param.Power.bOk)
+	{
+		// 备用电源启动正常，延迟一段时间后进入备用电源启动状态（部分设备保持关闭或进入低功耗模式）
+	}
+	else
+	{
+		// 备用电源关闭（关闭所有的设备）
+	}
+}
+
 static struEntry	Entries[] =
 {
 	{MSG_RO_WATER_PUMP,		MsgRoPumpSwitch},
 	{MSG_RO_BACKUP_PUMP,	MsgRoBackupPumpSwitch},
+	{MSG_AC_POWER,			MsgACPowerChange},
+	{MSG_BACKUP_POWER,		MsgBackupPowerChange}
 };
 
 void MsgProcess_entry(void)
@@ -86,6 +127,9 @@ typedef struct
 
 	uint16_t WaterLevel;				// 当前瞬间值
 	uint16_t WaterLevel_N;				// Ns采样的平均值
+
+	// 测试用值，用命令行模拟水位数据来验证（如果测试数据为0，则表示获取实际数据）
+	uint16_t FakeData;
 } struWaterLevelData;
 
 typedef struct
@@ -95,20 +139,22 @@ typedef struct
 	uint16_t	usWidth;
 } struTankSize;
 
-#define MAIN_TANK			0
-#define SUB_TANK			1
-#define RO_TANK				2
+
+#define SUB_TANK			SUB_US_PORT
+#define RO_TANK				RO_US_PORT
+#define MAIN_TANK			MAIN_US_PORT
 
 #define ULTRASOUND_NUM		3
 
 static struWaterLevelData			s_WaterLevel[ULTRASOUND_NUM];			// 主缸/底缸/RO缸
+static BaseType_t					s_HasBackupRO = pdFALSE;				// 备用RO水箱是否有水
 
 // 缸的尺寸（静态，不可变）
 const struTankSize					c_TankSize[ULTRASOUND_NUM] =
 {
-		{MAIN_TANK_HEIGHT, MAIN_TANK_LENGTH, MAIN_TANK_WIDTH},
 		{SUB_TANK_HEIGHT, SUB_TANK_LENGTH, SUB_TANK_WIDTH},
-		{RO_TANK_HEIGHT, RO_TANK_LENGTH, RO_TANK_WIDTH}
+		{RO_TANK_HEIGHT, RO_TANK_LENGTH, RO_TANK_WIDTH},
+		{MAIN_TANK_HEIGHT, MAIN_TANK_LENGTH, MAIN_TANK_WIDTH},
 };
 
 static TickType_t			s_NowTick;
@@ -118,6 +164,12 @@ static const uint8_t		c_NSeconds			= 5;						// N秒平均值是多少秒
 
 static struMyTimer			s_WLTimerArray[5];
 static struMyTimerQueue		s_WLTimerQueue = {s_WLTimerArray, sizeof(s_WLTimerArray) / sizeof(s_WLTimerArray[0])};
+
+// 蛋分延迟启动定时器
+static int16_t				s_ProteinSkimmerTimer = -1;
+
+// 电源切换延迟启动定时器
+static int16_t				s_PowerChangeTimer	= -1;
 
 // 临时补水量（临时目标水位）
 
@@ -139,6 +191,9 @@ void WaterLevelControlTask( void * pvParameters)
 
 	// 初始化水位控制任务的所有数据
 	InitWaterLevelControlTask();
+
+	// 从停止状态切换到Init1，重启后，默认直接进入正常状态
+	StateMachineSwitch(&s_WLStateMachine, WL_Init1State);
 
 	while (1)
 	{
@@ -164,19 +219,32 @@ void ProcessWaterLevel(void* pvParameters)
 	uint16_t		usDistance;
 	struWaterLevelData*		pData;
 	Msg*			pMsg;
-	BaseType_t		bChanged = pdFALSE;			// 任何一缸水位变化，都需要做一次处理
 
 	for (i = 0; i < ULTRASOUND_NUM; i++)
 	{
 		pData = &s_WaterLevel[i];
 
 		// 检测水位
-		bRet = GetDistance(i, &usDistance);
-		if (bRet != pdTRUE)
+		if (pData->FakeData == 0)
 		{
-			// 水位检测失败（告警）
-			LogOutput(LOG_ERROR, "Port %d water level failed.", i);
-			usDistance = 0;
+			// 获取实际水位数据
+			bRet = GetDistance(i, &usDistance);
+			if (bRet != pdTRUE)
+			{
+				// 水位检测失败（告警）
+				LogOutput(LOG_ERROR, "Port %d water level failed.", i);
+				usDistance = 0;
+			}
+			else
+			{
+				// 换算为实际水位高度
+				usDistance = c_TankSize[i].usHeight - usDistance;
+			}
+		}
+		else
+		{
+			// 使用命令行模拟的数据
+			usDistance = pData->FakeData;
 		}
 
 		pMsg = NULL;
@@ -186,7 +254,6 @@ void ProcessWaterLevel(void* pvParameters)
 		if ((pData->WaterLevel != usDistance) && (!pMsg))
 		{
 			pMsg = MallocMsg();
-			bChanged = pdTRUE;
 		}
 
 		pData->WaterLevelBuffers[pData->BufferPos++] = usDistance;
@@ -228,7 +295,6 @@ void ProcessWaterLevel(void* pvParameters)
 			if (!pMsg && (wlAvg != pData->WaterLevel_N))
 			{
 				pMsg = MallocMsg();
-				bChanged = pdTRUE;
 			}
 			pData->WaterLevel_N = wlAvg;
 		}
@@ -253,6 +319,8 @@ void ProcessWaterLevel(void* pvParameters)
 		}
 	}
 
+	// TODO:检查备用RO水箱的水位状态（红外线检测，开关量）
+
 	// 状态机执行
 	StateMachineRun(&s_WLStateMachine);
 }
@@ -275,7 +343,6 @@ void ProcessWaterLevel(void* pvParameters)
 
 // 另一条补水线路：RO水缸缺水（配置值），就检测外部RO水缸是否有水，如果有水就启动补充RO水的流程。
 
-
 // 停止状态
 void* WL_StopState()
 {
@@ -283,7 +350,7 @@ void* WL_StopState()
 }
 
 // 主泵开启
-void* WL_Init_1_State()
+void* WL_Init1State()
 {
 	return NULL;
 }
@@ -291,60 +358,124 @@ void* WL_Init_1_State()
 // 正常状态
 void* WL_NormalState()
 {
-	// 检查底缸水位，检查是否补水
+	// 检查底缸水位，检查是否补水（水位低于“参考值 - offset”后，同时检查RO水缸水位是否大于最小值）
+	if ((s_WaterLevel[SUB_TANK].WaterLevel_N < (Get_usSubTankWaterLevelRef() - Get_usRORefillOffset()))
+			&& (s_WaterLevel[RO_TANK].WaterLevel_N > Get_usRoTankWaterLevel_Min()))
+	{
+		return WL_RORefillState;
+	}
 
-	// 检查RO缸水位，检测是否需要从备用RO桶补RO水
+	// 检查RO缸水位，检测是否需要从备用RO桶补RO水（备用RO桶还要判断是否有水，有水才能切换状态）
+	if ((s_WaterLevel[RO_TANK].WaterLevel_N < Get_usRoTankWaterLevel_Refill())
+			&& (s_HasBackupRO))
+	{
+		return WL_ROBackupRefillState;
+	}
 
-	//
-
+	// 没有变化，保持当前状态
 	return NULL;
 }
 
 // 补水状态
 void* WL_RORefillState()
 {
+	// 检查底缸水位 和 RO水缸水位（底缸需要使用即时水位检查，避免延迟）
+	if ((s_WaterLevel[SUB_TANK].WaterLevel >= Get_usSubTankWaterLevelRef())
+			|| (s_WaterLevel[RO_TANK].WaterLevel <= Get_usRoTankWaterLevel_Min()))
+	{
+		return WL_NormalState;
+	}
+
 	return NULL;
 }
 
 // RO备用补水状态
 void* WL_ROBackupRefillState()
 {
+	// 检查备用RO缸水位状态（红外线探测，开关量） 和 RO水缸水位
+	if ((s_WaterLevel[RO_TANK].WaterLevel >= Get_usRoTankWaterLevel_Max())
+			|| (!s_HasBackupRO))
+	{
+		return WL_ROBackupRefillState;
+	}
+
 	return NULL;
 }
 
-// 从初始状态切换到正常状态需要执行的动作
-void WL_Init_Normal_Change(StateMachineFunc pOld)
+// 从停止状态切换到初始启动状态
+void WL_Stop_Init1_Change(StateMachineFunc pOld)
 {
+	(void)pOld;
 
+	// 开启主泵
+	Switch_MainPump(POWER_ON);
+
+	// 设置定时器，延迟启动蛋分（防止水位太高或者因停机太久，水质变差，导致蛋分暴冲）
+	if (s_ProteinSkimmerTimer)
+	{
+		RemoveTimer(&s_WLTimerQueue, s_ProteinSkimmerTimer);
+	}
+	s_ProteinSkimmerTimer = AddTimer(&s_WLTimerQueue, xTaskGetTickCount(), Get_ulProteinSkimmerTimer(), pdFALSE, ProteinSkimmerOnTimer, NULL);
+}
+
+// 从初始状态切换到正常状态需要执行的动作
+void WL_Init1_Normal_Change(StateMachineFunc pOld)
+{
+	(void)pOld;
+
+	// 这个状态通常有定时器启动切换的
+	// 启动蛋分
+	Switch_ProteinSkimmer(POWER_ON);
 }
 
 // 从正常切换到补充淡水
 void WL_Normal_RoRefill_Change(StateMachineFunc pOld)
 {
+	(void)pOld;
 
+	// 启动RO水泵
+	Switch_RoPump(POWER_ON);
 }
 
 // 从补水切换到正常
 void WL_Refill_Normal_Change(StateMachineFunc pOld)
 {
+	(void)pOld;
 
+	// 关闭RO水泵
+	Switch_RoPump(POWER_OFF);
 }
 
 // 从正常切换到备用RO水补充
 void WL_Normal_RoBackupRefill_Change(StateMachineFunc pOld)
 {
+	(void)pOld;
 
+	// 启动备用RO水泵，向RO缸补充淡水
+	Switch_BackupRoPump(POWER_ON);
 }
 
 // 从备用补水切换到正常
 void WL_BackupRefill_Normal_Change(StateMachineFunc pOld)
 {
+	(void)pOld;
 
+	// 关闭备用RO水泵
+	Switch_BackupRoPump(POWER_OFF);
 }
 
 // 从所有状态切换到停止
 void WL_All_Stop_Change(StateMachineFunc pOld)
 {
+	(void)pOld;
+
+	// 删除部分可能正在进行的定时器（例如：Init时的蛋分启动延迟，或者电源切换过程使用的延迟）
+	if (s_ProteinSkimmerTimer)
+	{
+		RemoveTimer(&s_WLTimerQueue, s_ProteinSkimmerTimer);
+		s_ProteinSkimmerTimer = -1;
+	}
+
 	// 关闭蛋分
 	Switch_ProteinSkimmer(POWER_OFF);
 
@@ -377,14 +508,17 @@ void RefillBackupROWaterTimer(void* pvParameters)
 // 延迟启动蛋分
 void ProteinSkimmerOnTimer(void* pvParameters)
 {
+	(void)pvParameters;
 
+	StateMachineSwitch(&s_WLStateMachine, WL_NormalState);
 }
 
 
 // 水位控制任务的状态机配置数据
 const struStateChangeEntry		c_WLStateMachineChangeEntries[] =
 {
-		{WL_StopState, WL_NormalState, WL_Init_Normal_Change},
+		{WL_StopState, WL_Init1State, WL_Stop_Init1_Change},
+		{WL_Init1State, WL_NormalState, WL_Init1_Normal_Change},
 };
 
 static struStateMachine			s_WLStateMachine =
@@ -393,4 +527,100 @@ static struStateMachine			s_WLStateMachine =
 		sizeof(c_WLStateMachineChangeEntries) / sizeof(c_WLStateMachineChangeEntries[0]),
 		WL_StopState
 };
+
+// -------------------------------Command line--------------------------------------------
+static BaseType_t cmd_wlstatus( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	char			WriteBuffer[30];
+	(void)pcCommandString;
+
+	// 输出每个缸当前水位
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Sub Tank:\r\n");
+	strncpy(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Current:%dmm\r\n", s_WaterLevel[SUB_TANK].WaterLevel);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Average:%dmm\r\n", s_WaterLevel[SUB_TANK].WaterLevel_N);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "!!!Fake:%dmm\r\n", s_WaterLevel[SUB_TANK].FakeData);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+
+
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "\r\nRO Tank:\r\n");
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Current:%dmm\r\n", s_WaterLevel[RO_TANK].WaterLevel);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Average:%dmm\r\n", s_WaterLevel[RO_TANK].WaterLevel_N);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "!!!Fake:%dmm\r\n", s_WaterLevel[RO_TANK].FakeData);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "\r\nBackup RO Tank:\r\n");
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Has water:%s\r\n", s_HasBackupRO ? "Yes" : "No");
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+
+	return pdFALSE;
+}
+
+const CLI_Command_Definition_t cmd_def_wlstatus =
+{
+	"wlstatus",
+	"\r\nwlstatus\r\n Show water level datas.\r\n",
+	cmd_wlstatus, /* The function to run. */
+	0
+};
+
+static BaseType_t cmd_wlset( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	const char *	pcParameter;
+	BaseType_t 		xParameterStringLength;
+	uint16_t		usDistance;
+	int8_t			tankIndex = -1;
+
+	// 分析第二个参数，水位数据，单位mm
+	pcParameter = FreeRTOS_CLIGetParameter(pcCommandString, 2, &xParameterStringLength);
+	configASSERT( pcParameter );
+	usDistance = atoi(pcParameter);
+
+	// 判断哪个超声波距离传感器
+	pcParameter = FreeRTOS_CLIGetParameter(pcCommandString, 1, &xParameterStringLength);
+	configASSERT( pcParameter );
+	if (strncasecmp(pcParameter, "ro", xParameterStringLength) == 0)
+	{
+		tankIndex = RO_TANK;
+	}
+	else if (strncasecmp(pcParameter, "sub", xParameterStringLength) == 0)
+	{
+		tankIndex = SUB_TANK;
+	}
+	else if (strncasecmp(pcParameter, "main", xParameterStringLength) == 0)
+	{
+		tankIndex = MAIN_TANK;
+	}
+
+	if (tankIndex >= 0)
+	{
+		// 设置虚拟值
+		s_WaterLevel[tankIndex].FakeData = usDistance;
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Tank (%d) set %dmm.\r\n", tankIndex, usDistance);
+	}
+	else
+	{
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Wrong tank!\r\n");
+	}
+
+	return pdFALSE;
+}
+
+const CLI_Command_Definition_t cmd_def_wlset =
+{
+	"wlset",
+	"\r\nwlset <sub|ro|main> <water level(mm)>\r\n Set fake water level datas.\r\n",
+	cmd_wlset, /* The function to run. */
+	2
+};
+
+
+
+
 

@@ -12,6 +12,7 @@
 #include <tc_gpio.h>
 #include <tc_i2c.h>
 #include <tc_serial.h>
+#include <WaterLevelTask.h>
 #include "diag/Trace.h"
 
 #include "FreeRTOS.h"
@@ -19,7 +20,6 @@
 
 #include "main/controller.h"
 #include "main/TemperatureTask.h"
-#include "main/WaterLevelTask.h"
 #include "msg.h"
 #include "i2c/stm32_eval_i2c_ee.h"
 #include "tc_rtc.h"
@@ -98,7 +98,7 @@ static void MainTask( void * pvParameters)
 
 	// 启动任务
 	//xTaskCreate(TempControlTask, "TempTask", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
-	//xTaskCreate(WaterLevelControlTask, "WaterLevelTask", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	xTaskCreate(WaterLevelControlTask, "WaterLevelTask", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
 
 	// 进入主任务的消息处理函数（不再返回）
 	controller_entry();

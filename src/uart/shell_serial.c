@@ -9,6 +9,7 @@
 
 
 #include <stdio.h>
+#include <WaterLevelTask.h>
 #include "tc_serial.h"
 #include "setting.h"
 
@@ -50,6 +51,26 @@ static const CLI_Command_Definition_t xQueryHeap =
 	0 /* The user can enter any number of commands. */
 };
 
+// reboot system
+static BaseType_t cmd_reboot( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	(void)pcWriteBuffer;
+	(void)xWriteBufferLen;
+	(void)pcCommandString;
+
+	NVIC_SystemReset();
+
+	return pdFALSE;
+}
+
+const CLI_Command_Definition_t cmd_def_reboot =
+{
+	"reboot",
+	"\r\nReboot system.\r\n,",
+	cmd_reboot, /* The function to run. */
+	0
+};
+
 // Command entries
 static const CLI_Command_Definition_t* commands[] =
 {
@@ -58,6 +79,9 @@ static const CLI_Command_Definition_t* commands[] =
 	&cmd_def_time,
 	&cmd_def_log,
 	&cmd_def_clearErr,
+	&cmd_def_wlstatus,
+	&cmd_def_wlset,
+	&cmd_def_reboot
 };
 
 void vRegisterCLICommands( void )

@@ -350,17 +350,18 @@ static BaseType_t cmd_log( char *pcWriteBuffer, size_t xWriteBufferLen, const ch
 
 	pcParameter = FreeRTOS_CLIGetParameter(pcCommandString, 1, &xParameterStringLength);
 	configASSERT( pcParameter );
-	if (strcasecmp(pcParameter, "out") == 0)
+	if (strncasecmp(pcParameter, "out", xParameterStringLength) == 0)
 	{
 		// 允许shell输出
 		s_logout = 1;
 		snprintf(pcWriteBuffer, xWriteBufferLen, "Log output on. \r\n");
 	}
-	else if (strcasecmp(pcParameter, "off") == 0)
+	else if (strncasecmp(pcParameter, "off", xParameterStringLength) == 0)
 	{
 		// 关闭shell输出
 		s_logout = 0;
-		snprintf(pcWriteBuffer, xWriteBufferLen, "Log output off. \r\n");	}
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Log output off. \r\n");
+	}
 	else
 	{
 		// 按日期格式分析

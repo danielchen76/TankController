@@ -51,7 +51,8 @@ void DefaultSettings()
 	s_Setting.usLowTemperature		= 2300;				// 23.00℃ 最低温度
 	s_Setting.usTemperatureOffset	= 100;				// 1.00℃
 
-	s_Setting.usSubTankWaterLevelRef	= 0;			// 默认参考水位为0，没有设置（首次运行）
+	s_Setting.usSubTankWaterLevelRef= 0;				// 默认参考水位为0，没有设置（首次运行）
+	s_Setting.usRORefillOffset		= 10;				// 低于参考值10mm后，才开始补水
 
 	s_Setting.usChangeWater			= 30 * 1000;		// 每次最多更换30升海水
 
@@ -60,6 +61,10 @@ void DefaultSettings()
 	s_Setting.usRoTankWaterLevel_Refill	= RO_TANK_HEIGHT / 2;
 	s_Setting.usRoTankWaterLevel_Warn	= RO_TANK_HEIGHT / 3;
 
+	// 时间延迟默认配置
+	s_Setting.ulProteinSkimmerTimer		= 5 * 60 * 1000;
+	s_Setting.ulBackupPowerOnlineTimer 	= 5 * 60 * 1000;
+	s_Setting.ulACPowerOnlineTimer		= 2 * 60 * 1000;
 }
 
 // 装载E2PROM中的数据到内存中
@@ -278,6 +283,7 @@ SETTING_SET_GET(usTemperatureOffset)
 // 水位高度配置（每次根据换水启动后自动计算获得，如果是意外停机或暂停而重启的，则从该配置项读取，也可以人工控制该配置项）
 // 配置是指实际超声波探头测量的水位（实际水位，是经过换算后的），单位全部都是“毫米”
 SETTING_SET_GET(usSubTankWaterLevelRef)
+SETTING_SET_GET(usRORefillOffset)
 
 SETTING_SET_GET(usChangeWater)
 
@@ -287,6 +293,10 @@ SETTING_SET_GET(usRoTankWaterLevel_Min)
 SETTING_SET_GET(usRoTankWaterLevel_Refill)
 SETTING_SET_GET(usRoTankWaterLevel_Warn)
 
+// 延迟时间配置（单位：ms）
+SETTING_SET_GET(ulProteinSkimmerTimer)
+SETTING_SET_GET(ulBackupPowerOnlineTimer)
+SETTING_SET_GET(ulACPowerOnlineTimer)
 
 // ------------------------------------------------------------------------------------------------------
 // Shell命令

@@ -6,13 +6,18 @@
  *      Author: daniel
  */
 
-#ifndef MAIN_WATERLEVELTASK_H_
-#define MAIN_WATERLEVELTASK_H_
+#ifndef INCLUDE_WATERLEVELTASK_H_
+#define INCLUDE_WATERLEVELTASK_H_
 
 #include <FreeRTOS.h>
+#include <FreeRTOS_CLI.h>
 
 void InitWaterLevelMsgQueue( void );
 void WaterLevelControlTask( void * pvParameters);
 
 
-#endif /* MAIN_WATERLEVELTASK_H_ */
+extern const CLI_Command_Definition_t cmd_def_wlstatus;
+extern const CLI_Command_Definition_t cmd_def_wlset;
+
+
+#endif /* INCLUDE_WATERLEVELTASK_H_ */

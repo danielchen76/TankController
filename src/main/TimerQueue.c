@@ -12,6 +12,7 @@
 
 #include "util.h"
 
+// 任务内定时器队列，只能单任务使用。每隔任务需要初始化自己使用的定时器队列
 void InitTimerQueue(struMyTimerQueue* pTimerQueue)
 {
 	assert_param(pTimerQueue->size > 0);
@@ -28,7 +29,7 @@ int16_t AddTimer(struMyTimerQueue* pTimerQueue, TickType_t tickNow, TickType_t t
 	for (uint8_t i = 0; i < pTimerQueue->size; i++)
 	{
 		pTimer = pTimerQueue->pQueue + i;
-		if (pTimer->pFunc != NULL)
+		if (pTimer->pFunc == NULL)
 		{
 			pTimer->tLastTick 		= tickNow;
 			pTimer->timeout 		= timeout;
@@ -61,6 +62,12 @@ void CheckTimerQueue(struMyTimerQueue* pTimerQueue, TickType_t tickNow)
 	for (uint8_t i = 0; i < pTimerQueue->size; i++)
 	{
 		pTimer = pTimerQueue->pQueue + i;
+
+		// 判断定时器是否在使用
+		if (!pTimer->pFunc)
+		{
+			continue;
+		}
 
 		if (IsTimeout(tickNow, pTimer->tLastTick, pTimer->timeout))
 		{

@@ -34,6 +34,10 @@ typedef enum
 	MSG_WATER_OUT_PUMP,			// 换水抽水泵
 	MSG_WATER_IN_PUMP,			// 加注海水泵
 
+	// 电源状态变更消息
+	MSG_AC_POWER,				// 交流电源状态
+	MSG_BACKUP_POWER,			// 备用电源状态
+
 	// 其他控制消息
 
 	// GUI
@@ -63,6 +67,10 @@ typedef union
 		BaseType_t	bOn;			//True:开启
 	} 	Switch;
 
+	struct Msg_Power
+	{
+		BaseType_t	bOk;			// true：电源正常，false：电源异常
+	} Power;
 
 
 
