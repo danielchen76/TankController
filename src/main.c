@@ -49,7 +49,7 @@
 // 堆栈大小
 #define MAIN_TASK_STACK_SIZE		1000
 #define TEMP_TASK_STACK_SIZE		500
-#define WATERLEVEL_TASK_STACK_SIZE	500
+#define WATERLEVEL_TASK_STACK_SIZE	1000
 #define LED_TASK_STACK_SIZE			configMINIMAL_STACK_SIZE
 #define LOG_TASK_STACK_SIZE			500
 
@@ -59,8 +59,8 @@ static void MainTask( void * pvParameters)
 	// RTC
 	InitRTC();
 
-	// SPI flash和文件系统
-	InitSpiffs();
+	// TODO:（暂时不用）SPI flash和文件系统
+	//InitSpiffs();
 
 	// 初始化消息数组和所有消息队列
 	InitMsgArray();
@@ -87,6 +87,9 @@ static void MainTask( void * pvParameters)
 	// 初始化所有GPIO口
 	InitPowerGPIO();
 	InitSensorsGPIO();
+
+	// 初始化水位用超声波探头
+	InitUltraSoundSensors();
 
 	// 初始化温度控制任务
 	InitTempMsgQueue();

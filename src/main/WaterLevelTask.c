@@ -171,6 +171,8 @@ static int16_t				s_ProteinSkimmerTimer = -1;
 // 电源切换延迟启动定时器
 static int16_t				s_PowerChangeTimer	= -1;
 
+// 备用RO水补水最长时间（避免陷入备用RO水补水状态，而无法返回正常的补水检测）
+static int16_t				s_BackupRORefillTimer = -1;
 // 临时补水量（临时目标水位）
 
 void InitWaterLevelControlTask()
@@ -182,6 +184,7 @@ void InitWaterLevelControlTask()
 
 	// 添加水位定时检测回调函数
 	AddTimer(&s_WLTimerQueue, xTaskGetTickCount(), c_DataInterval, pdTRUE, ProcessWaterLevel, NULL);
+	LogOutput(LOG_INFO, "1 second timer, for check water level and run state machine.");
 }
 
 //
@@ -319,7 +322,8 @@ void ProcessWaterLevel(void* pvParameters)
 		}
 	}
 
-	// TODO:检查备用RO水箱的水位状态（红外线检测，开关量）
+	// 检查备用RO水箱的水位状态（红外线检测，开关量）
+	s_HasBackupRO = BackupROHasWater();
 
 	// 状态机执行
 	StateMachineRun(&s_WLStateMachine);
@@ -362,6 +366,7 @@ void* WL_NormalState()
 	if ((s_WaterLevel[SUB_TANK].WaterLevel_N < (Get_usSubTankWaterLevelRef() - Get_usRORefillOffset()))
 			&& (s_WaterLevel[RO_TANK].WaterLevel_N > Get_usRoTankWaterLevel_Min()))
 	{
+		LogOutput(LOG_INFO, "Begin to refill RO water to sub tank.");
 		return WL_RORefillState;
 	}
 
@@ -369,6 +374,7 @@ void* WL_NormalState()
 	if ((s_WaterLevel[RO_TANK].WaterLevel_N < Get_usRoTankWaterLevel_Refill())
 			&& (s_HasBackupRO))
 	{
+		LogOutput(LOG_INFO, "Begin to refill RO tank.");
 		return WL_ROBackupRefillState;
 	}
 
@@ -383,6 +389,8 @@ void* WL_RORefillState()
 	if ((s_WaterLevel[SUB_TANK].WaterLevel >= Get_usSubTankWaterLevelRef())
 			|| (s_WaterLevel[RO_TANK].WaterLevel <= Get_usRoTankWaterLevel_Min()))
 	{
+		LogOutput(LOG_INFO, "Sub tank:%dmm, RO tank:%dmm", s_WaterLevel[SUB_TANK].WaterLevel, s_WaterLevel[RO_TANK].WaterLevel);
+		LogOutput(LOG_INFO, "Finish refill RO water to sub tank.");
 		return WL_NormalState;
 	}
 
@@ -396,6 +404,8 @@ void* WL_ROBackupRefillState()
 	if ((s_WaterLevel[RO_TANK].WaterLevel >= Get_usRoTankWaterLevel_Max())
 			|| (!s_HasBackupRO))
 	{
+		LogOutput(LOG_INFO, "RO tank:%dmm, backup RO:%s", s_WaterLevel[RO_TANK].WaterLevel, s_HasBackupRO ? "Yes" : "No");
+		LogOutput(LOG_INFO, "Finish refill RO tank");
 		return WL_ROBackupRefillState;
 	}
 
@@ -409,6 +419,7 @@ void WL_Stop_Init1_Change(StateMachineFunc pOld)
 
 	// 开启主泵
 	Switch_MainPump(POWER_ON);
+	LogOutput(LOG_INFO, "Turn on main pump.");
 
 	// 设置定时器，延迟启动蛋分（防止水位太高或者因停机太久，水质变差，导致蛋分暴冲）
 	if (s_ProteinSkimmerTimer)
@@ -416,6 +427,7 @@ void WL_Stop_Init1_Change(StateMachineFunc pOld)
 		RemoveTimer(&s_WLTimerQueue, s_ProteinSkimmerTimer);
 	}
 	s_ProteinSkimmerTimer = AddTimer(&s_WLTimerQueue, xTaskGetTickCount(), Get_ulProteinSkimmerTimer(), pdFALSE, ProteinSkimmerOnTimer, NULL);
+	LogOutput(LOG_INFO, "Start timer for delay turn on protein skimmer.");
 }
 
 // 从初始状态切换到正常状态需要执行的动作
@@ -462,6 +474,7 @@ void WL_BackupRefill_Normal_Change(StateMachineFunc pOld)
 
 	// 关闭备用RO水泵
 	Switch_BackupRoPump(POWER_OFF);
+
 }
 
 // 从所有状态切换到停止

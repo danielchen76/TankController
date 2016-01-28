@@ -74,7 +74,6 @@ void LEDTask( void * pvParameters)
 		}
 
 		vTaskDelay(usON / portTICK_RATE_MS);
-		LogOutput(LOG_INFO, "LED on.");
 		INTERNAL_LED_ON;
 
 		vTaskDelay(usOFF / portTICK_RATE_MS);

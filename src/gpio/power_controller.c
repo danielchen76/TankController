@@ -8,6 +8,7 @@
  */
 
 #include <tc_gpio.h>
+#include "logTask.h"
 
 void InitPowerGPIO()
 {
@@ -50,6 +51,7 @@ void InitPowerGPIO()
 void Switch_MainPump(BaseType_t bOn)
 {
 	SWITCH(bOn, MAINPUMP);
+	LogOutput(LOG_INFO, "Turn %s main pump.", bOn ? "on" : "off");
 }
 
 // 蛋白质分离器
@@ -58,6 +60,7 @@ void Switch_MainPump(BaseType_t bOn)
 void Switch_ProteinSkimmer(BaseType_t bOn)
 {
 	SWITCH(bOn, PROTEINSKIMMER);
+	LogOutput(LOG_INFO, "Turn %s protein skimmer.", bOn ? "on" : "off");
 }
 
 // 主缸造浪泵
@@ -66,6 +69,7 @@ void Switch_ProteinSkimmer(BaseType_t bOn)
 void Switch_WaveMaker(BaseType_t bOn)
 {
 	SWITCH(bOn, WAVEMAKER);
+	LogOutput(LOG_INFO, "Turn %s main wave maker.", bOn ? "on" : "off");
 }
 
 // 主缸造浪泵（夜间模式，备用模式）
@@ -82,6 +86,7 @@ void Switch_WaveMakerNightMode(BaseType_t bOn)
 void Switch_SubWaveMaker(BaseType_t bOn)
 {
 	SWITCH(bOn, SUB_WAVEMAKER);
+	LogOutput(LOG_INFO, "Turn %s sub wave maker.", bOn ? "on" : "off");
 }
 
 // RO补水泵（12V）
@@ -90,6 +95,7 @@ void Switch_SubWaveMaker(BaseType_t bOn)
 void Switch_RoPump(BaseType_t bOn)
 {
 	SWITCH(bOn, RO_PUMP);
+	LogOutput(LOG_INFO, "Turn %s RO reill pump.", bOn ? "on" : "off");
 
 	// 同时开启/关闭电磁阀
 }
@@ -100,6 +106,7 @@ void Switch_RoPump(BaseType_t bOn)
 void Switch_BackupRoPump(BaseType_t bOn)
 {
 	SWITCH(bOn, BACKUP_RO_PUMP);
+	LogOutput(LOG_INFO, "Turn %s backup RO reill pump.", bOn ? "on" : "off");
 
 	// 同时开启/关闭电磁阀
 

@@ -37,5 +37,8 @@ void Switch_T5H0(BaseType_t bOn);
 void Switch_Heater1(BaseType_t bOn);
 void Switch_Hearter2(BaseType_t bOn);
 
+// 输入引脚状态
+BaseType_t BackupROHasWater();
+
 
 #endif /* INCLUDE_TC_GPIO_H_ */

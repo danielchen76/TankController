@@ -50,7 +50,15 @@ void InitRotaryEncoderGPIO()
 
 }
 
-// GPIO中断
+//-----------------------------------输入口状态----------------------------------------
+// 获取备用RO水箱是否有水
+BaseType_t BackupROHasWater()
+{
+	// TODO:红外线水位传感器
+	return pdFALSE;
+}
+
+// -------------------------------------GPIO中断---------------------------------------
 void EXTI0_IRQHandler(void)
 {
 
