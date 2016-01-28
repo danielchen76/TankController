@@ -143,6 +143,7 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 		{
 			// 拼接数据，返回结果
 			*pData  = s_Buffer[0] * 256 + s_Buffer[1];
+			USART_ITConfig(USARTwl, USART_IT_RXNE, DISABLE);
 
 			return pdTRUE;
 		}
