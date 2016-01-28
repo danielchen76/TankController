@@ -95,6 +95,8 @@ void InitLogTask()
 // 内部函数，在互斥量内使用，不得外用
 void LogMsgFull()
 {
+	LogMsg*		pLog;
+	
 	// 向队列插入full（如果full消息没有在使用）
 	// 这个只是记录有过full，如果一直很满，那么也无法准确记录。这个只是记录曾经full过，需要寻找问题根源
 	if (s_FullLog.LogType == LOG_UNUSED)
@@ -111,7 +113,8 @@ void LogMsgFull()
 		snprintf(s_FullLog.LogParam.LogText.cLog, LOG_RECORD_SIZE, "Log full!");
 
 		// 放入消息队列
-		xQueueSendToBack(log_queue, (void*)&s_FullLog, portMAX_DELAY);
+		pLog = &s_FullLog;
+		xQueueSendToBack(log_queue, (void*)&pLog, portMAX_DELAY);
 	}
 }
 
@@ -127,6 +130,7 @@ LogMsg* MallocLogMsg()
 		{
 			pLog = &s_LogMsgs[i];
 			pLog->LogType = LOG_USED;
+			break;
 		}
 	}
 
