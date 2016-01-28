@@ -210,7 +210,7 @@ void WaterLevelControlTask( void * pvParameters)
 // 检测、计算水位数据，然后根据水位数据和当前状态进行处理
 void ProcessWaterLevel(void* pvParameters)
 {
-	uint8_t			i;
+	uint8_t			i, j;
 	int16_t			pos;
 	uint32_t		total;
 	uint16_t		wlAvg;
@@ -270,16 +270,16 @@ void ProcessWaterLevel(void* pvParameters)
 		count = 0;
 
 		// 累加
-		for (i = 0; i < c_NSeconds; i++)
+		for (j = 0; j < c_NSeconds; j++)
 		{
 			if (--pos < 0)
 			{
 				pos = WL_BUFFER_SIZE - 1;
 			}
 
-			if (pData->WaterLevelBuffers[i] > 0)
+			if (pData->WaterLevelBuffers[pos] > 0)
 			{
-				total += pData->WaterLevelBuffers[i];
+				total += pData->WaterLevelBuffers[pos];
 
 				// 有效数值+1
 				count++;
