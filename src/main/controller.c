@@ -8,13 +8,19 @@
 
 #include "controller.h"
 #include "Msg.h"
+#include "TimerQueue.h"
+#include "StateMachine.h"
 
 #include <queue.h>
+#include <task.h>
 
 // 定义队列大小
 QueueHandle_t		main_queue;
 const UBaseType_t 	uxMainQueueSize = 20;
 
+// Main主消息处理任务的时间定时器
+static struMyTimer			s_MainTimerArray[5];
+static struMyTimerQueue		s_MainTimerQueue = {s_MainTimerArray, sizeof(s_MainTimerArray) / sizeof(s_MainTimerArray[0])};
 
 // 初始化消息队列
 void InitMainMsgQueue( void )
@@ -62,6 +68,9 @@ void controller_entry(void)
 	unsigned int	i;
 	BaseType_t		ret;
 
+	// 初始化定时器队列
+	InitTimerQueue(&s_MainTimerQueue);
+
 	// 循环读取队列，然后处理
 	while(1) {
 		ret = xQueueReceive(main_queue, &msg, pdMS_TO_TICKS(100));
@@ -81,6 +90,9 @@ void controller_entry(void)
 			// 完成处理后，将Msg设置为空闲
 			FreeMsg(msg);
 		}
+
+		// 定时器队列检查
+		CheckTimerQueue(&s_MainTimerQueue, xTaskGetTickCount());
 	}
 }
 

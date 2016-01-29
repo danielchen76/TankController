@@ -29,11 +29,11 @@ const UBaseType_t 	uxLEDQueueSize = 5;
 static BaseType_t					s_bError = pdFALSE;
 
 // 单位：ms
-#define LED_NORMAL_ON_TIME			1000
-#define LED_NORMAL_OFF_TIME			1000
+#define LED_NORMAL_ON_TIME			2000
+#define LED_NORMAL_OFF_TIME			50
 
-#define LED_ERROR_ON_TIME			300
-#define LED_ERROR_OFF_TIME			300
+#define LED_ERROR_ON_TIME			500
+#define LED_ERROR_OFF_TIME			100
 
 void InitLEDTask( void )
 {

@@ -171,8 +171,12 @@ static int16_t				s_ProteinSkimmerTimer = -1;
 // 电源切换延迟启动定时器
 static int16_t				s_PowerChangeTimer	= -1;
 
-// 备用RO水补水最长时间（避免陷入备用RO水补水状态，而无法返回正常的补水检测）
+// 备用RO水补水定时检查（避免陷入备用RO水补水状态，而无法返回正常的补水检测）
 static int16_t				s_BackupRORefillTimer = -1;
+#define BACKUPROREFILL_TIMER_TIMEOUT			(30 * 1000)					// 至少每隔30秒提升10mm水位。如果低于这个标准，就退回正常状态
+#define BACKUPROREFILL_MIN_HEIGHT				10
+static uint16_t				s_usLastROWL = 0;								// 上次定时检查的水位
+
 // 临时补水量（临时目标水位）
 
 void InitWaterLevelControlTask()
@@ -304,6 +308,7 @@ void ProcessWaterLevel(void* pvParameters)
 		else
 		{
 			// 告警，长时间没有检测到水位数据（根据当前检测的探头通道，需要立即停止淡水补水，或备用淡水补水）
+			// TODO:怎么解决开机后的初始化值都是0？（理论上，第一次如果成功获取到水位，则至少有一个数据，所以不会告警）
 			LogOutput(LOG_ERROR, "Port %d water level lost connection too long.", i);
 		}
 
@@ -419,7 +424,6 @@ void WL_Stop_Init1_Change(StateMachineFunc pOld)
 
 	// 开启主泵
 	Switch_MainPump(POWER_ON);
-	LogOutput(LOG_INFO, "Turn on main pump.");
 
 	// 设置定时器，延迟启动蛋分（防止水位太高或者因停机太久，水质变差，导致蛋分暴冲）
 	if (s_ProteinSkimmerTimer)
@@ -427,6 +431,7 @@ void WL_Stop_Init1_Change(StateMachineFunc pOld)
 		RemoveTimer(&s_WLTimerQueue, s_ProteinSkimmerTimer);
 	}
 	s_ProteinSkimmerTimer = AddTimer(&s_WLTimerQueue, xTaskGetTickCount(), Get_ulProteinSkimmerTimer(), pdFALSE, ProteinSkimmerOnTimer, NULL);
+
 	LogOutput(LOG_INFO, "Start timer for delay turn on protein skimmer.");
 }
 
@@ -438,6 +443,8 @@ void WL_Init1_Normal_Change(StateMachineFunc pOld)
 	// 这个状态通常有定时器启动切换的
 	// 启动蛋分
 	Switch_ProteinSkimmer(POWER_ON);
+
+	LogOutput(LOG_INFO, "Init1 mode switch to normal mode.");
 }
 
 // 从正常切换到补充淡水
@@ -447,6 +454,8 @@ void WL_Normal_RoRefill_Change(StateMachineFunc pOld)
 
 	// 启动RO水泵
 	Switch_RoPump(POWER_ON);
+
+	LogOutput(LOG_INFO, "Normal mode switch to RO refill mode.");
 }
 
 // 从补水切换到正常
@@ -456,6 +465,8 @@ void WL_Refill_Normal_Change(StateMachineFunc pOld)
 
 	// 关闭RO水泵
 	Switch_RoPump(POWER_OFF);
+
+	LogOutput(LOG_INFO, "RO refill mode switch to normal mode.");
 }
 
 // 从正常切换到备用RO水补充
@@ -465,6 +476,15 @@ void WL_Normal_RoBackupRefill_Change(StateMachineFunc pOld)
 
 	// 启动备用RO水泵，向RO缸补充淡水
 	Switch_BackupRoPump(POWER_ON);
+
+	// 启动一个保护定时器，确保备用RO水补充状态不会因为意外错误导致状态机无法恢复到正常检测状态
+	if (s_BackupRORefillTimer > 0)
+	{
+		RemoveTimer(&s_WLTimerQueue, s_BackupRORefillTimer);
+	}
+	s_BackupRORefillTimer = AddTimer(&s_WLTimerQueue, xTaskGetTickCount(), BACKUPROREFILL_TIMER_TIMEOUT, pdTRUE, RefillBackupROWaterTimer, NULL);
+
+	LogOutput(LOG_INFO, "Normal mode switch to backup RO refill mode.");
 }
 
 // 从备用补水切换到正常
@@ -475,6 +495,7 @@ void WL_BackupRefill_Normal_Change(StateMachineFunc pOld)
 	// 关闭备用RO水泵
 	Switch_BackupRoPump(POWER_OFF);
 
+	Logoutput(LOG_INFO, "Backup RO refill mode switch to normal mode.");
 }
 
 // 从所有状态切换到停止
@@ -489,6 +510,12 @@ void WL_All_Stop_Change(StateMachineFunc pOld)
 		s_ProteinSkimmerTimer = -1;
 	}
 
+	// 从备用RO补充过程的定时器关闭
+	if (s_BackupRORefillTimer > 0)
+	{
+		RemoveTimer(&s_WLTimerQueue, s_BackupRORefillTimer);
+	}
+
 	// 关闭蛋分
 	Switch_ProteinSkimmer(POWER_OFF);
 
@@ -500,6 +527,8 @@ void WL_All_Stop_Change(StateMachineFunc pOld)
 	Switch_BackupRoPump(POWER_OFF);
 	Switch_SeaPumpOut(POWER_OFF);
 	Switch_SeaPumpIn(POWER_OFF);
+
+	LogOutput(LOG_INFO, "Stop mode.");
 }
 
 // 补充RO水到底缸，有一个最长约束时间，避免加水时间太长？
@@ -515,7 +544,24 @@ void RefillROWaterTimer(void* pvParameters)
 // 备用RO水补水定时检查
 void RefillBackupROWaterTimer(void* pvParameters)
 {
+	// 比较当前RO缸平均水位和上次水位的比较，如果小于预定值，则将切换回正常状态
+	if (s_usLastROWL == 0)
+	{
+		s_usLastROWL = s_WaterLevel[RO_TANK].WaterLevel_N;
+		return;
+	}
 
+	if (s_WaterLevel[RO_TANK].WaterLevel_N < (s_usLastROWL + BACKUPROREFILL_MIN_HEIGHT))
+	{
+		// 水位增加太慢，有问题，切换回正常状态
+		StateMachineSwitch(&s_WLStateMachine, WL_NormalState);
+		s_usLastROWL = 0;
+		LogOutput(LOG_ERROR, "Backup RO refill error, found too less water refill to RO tank.");
+	}
+	else
+	{
+		s_usLastROWL = s_WaterLevel[RO_TANK].WaterLevel_N;
+	}
 }
 
 // 延迟启动蛋分

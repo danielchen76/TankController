@@ -145,7 +145,8 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 			*pData  = s_Buffer[0] * 256 + s_Buffer[1];
 			USART_ITConfig(USARTwl, USART_IT_RXNE, DISABLE);
 
-			return pdTRUE;
+			// 读取到0也是认为失败的
+			return (*pData > 0) ? pdTRUE : pdFALSE;
 		}
 	}
 
