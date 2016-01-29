@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdint.h>
 // ----------- >8 ------------
 typedef int32_t s32_t;
 typedef uint32_t u32_t;
