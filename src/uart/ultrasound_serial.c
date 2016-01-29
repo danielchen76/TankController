@@ -157,7 +157,9 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 
 void USART2_IRQHandler(void)
 {
-	if (USART_GetITStatus(USARTwl, USART_IT_RXNE) != RESET)
+	uint16_t sr = USARTwl->SR;
+
+	if (sr & USART_FLAG_RXNE)
 	{
 		if (s_BufferPos < 2)
 		{
@@ -170,5 +172,10 @@ void USART2_IRQHandler(void)
 			/* Disable the USARTy Receive interrupt */
 			USART_ITConfig(USARTwl, USART_IT_RXNE, DISABLE);
 		}
+	}
+
+	if (sr & USART_FLAG_ORE)
+	{
+		USART_ReceiveData(USARTwl);
 	}
 }
