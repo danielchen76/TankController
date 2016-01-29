@@ -132,7 +132,7 @@ to exclude the API function. */
 //NVIC value of 255. */
 //#define configLIBRARY_KERNEL_INTERRUPT_PRIORITY		15
 
-#define configPRIO_BITS 								__NVIC_PRIO_BITS
+#define configPRIO_BITS 								4
 
 #define configLIBRARY_LOWEST_INTERRUPT_PRIORITY			15
 #define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY	11			//5
