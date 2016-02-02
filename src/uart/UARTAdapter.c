@@ -279,10 +279,11 @@ void vSerialClose( xComPortHandle xPort )
 
 void USART1_IRQHandler( void )
 {
-portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-char cChar;
+	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+	char cChar;
+	uint16_t sr = USART1->SR;
 
-	if( USART_GetITStatus( USART1, USART_IT_TXE ) == SET )
+	if (sr & USART_FLAG_TXE)
 	{
 		/* The interrupt was caused by the THR becoming empty.  Are there any
 		more characters to transmit? */
@@ -298,7 +299,7 @@ char cChar;
 		}		
 	}
 	
-	if( USART_GetITStatus( USART1, USART_IT_RXNE ) == SET )
+	if (sr & USART_FLAG_RXNE)
 	{
 		cChar = USART_ReceiveData( USART1 );
 		xQueueSendFromISR( xRxedChars, &cChar, &xHigherPriorityTaskWoken );

@@ -13,11 +13,11 @@
 #include <task.h>
 
 #define USARTwl                   USART2
-#define USARTwl_GPIO              GPIOA
+#define USARTwl_GPIO              GPIOD
 #define USARTwl_CLK               RCC_APB1Periph_USART2
-#define USARTwl_GPIO_CLK          RCC_APB2Periph_GPIOA
-#define USARTwl_RxPin             GPIO_Pin_3
-#define USARTwl_TxPin             GPIO_Pin_2
+#define USARTwl_GPIO_CLK          RCC_APB2Periph_GPIOD
+#define USARTwl_RxPin             GPIO_Pin_6
+#define USARTwl_TxPin             GPIO_Pin_5
 
 // CD4052的A、B引脚
 // Pin A
@@ -42,9 +42,12 @@ void InitUltraSoundSensors(void)
 
 	/* Enable USART Clock */
 	RCC_APB1PeriphClockCmd(USARTwl_CLK, ENABLE);
-	RCC_APB1PeriphClockCmd(USARTwl_GPIO_CLK, ENABLE);
+	RCC_APB2PeriphClockCmd(USARTwl_GPIO_CLK | RCC_APB2Periph_AFIO, ENABLE);
 
 	/*!< GPIO configuration */
+
+	GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE);
+
 	/* Configure USART Rx as input floating */
 	GPIO_InitStructure.GPIO_Pin = USARTwl_RxPin;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
@@ -137,7 +140,7 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 	// 等待结果
 	for (uint8_t i = 0; i < 100; i++)
 	{
-		vTaskDelay(1 / portTICK_RATE_MS);
+		vTaskDelay(2 / portTICK_RATE_MS);
 
 		if (s_BufferPos == 2)
 		{

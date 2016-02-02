@@ -58,6 +58,8 @@ static BaseType_t cmd_reboot( char *pcWriteBuffer, size_t xWriteBufferLen, const
 	(void)xWriteBufferLen;
 	(void)pcCommandString;
 
+	__disable_irq();
+
 	NVIC_SystemReset();
 
 	return pdFALSE;
