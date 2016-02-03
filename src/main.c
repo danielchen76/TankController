@@ -25,6 +25,7 @@
 #include "tc_rtc.h"
 #include "logTask.h"
 #include "tc_spi.h"
+#include "tc_adc.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -90,6 +91,12 @@ static void MainTask( void * pvParameters)
 
 	// 初始化水位用超声波探头
 	InitUltraSoundSensors();
+
+	// 初始化ADC
+	InitADC();
+
+	// TODO:TEST
+	GetDCVoltage();
 
 	// 初始化温度控制任务
 	InitTempMsgQueue();
