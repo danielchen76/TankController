@@ -21,6 +21,7 @@
 
 #include <task.h>
 #include <WaterLevelTask.h>
+#include <LogTask.h>
 
 #include "stm32f10x.h"
 
@@ -85,12 +86,24 @@ void MsgBackupPowerChange(Msg* msg)
 	}
 }
 
+void MsgPauseSystem(Msg* msg)
+{
+	if (msg->Param.Pause.seconds > 0)
+	{
+		// 设定一个定时器，触发重启系统
+	}
+
+	// 控制所有泵进入停机状态
+	// TODO:造浪泵怎么控制？（造浪泵也在这个水位控制任务中控制了？）
+}
+
 static struEntry	Entries[] =
 {
 	{MSG_RO_WATER_PUMP,		MsgRoPumpSwitch},
 	{MSG_RO_BACKUP_PUMP,	MsgRoBackupPumpSwitch},
 	{MSG_AC_POWER,			MsgACPowerChange},
-	{MSG_BACKUP_POWER,		MsgBackupPowerChange}
+	{MSG_BACKUP_POWER,		MsgBackupPowerChange},
+	{MSG_PAUSE_SYS,			MsgPauseSystem}
 };
 
 void MsgProcess_entry(void)
@@ -152,15 +165,15 @@ static BaseType_t					s_HasBackupRO = pdFALSE;				// 备用RO水箱是否有水
 // 缸的尺寸（静态，不可变）
 const struTankSize					c_TankSize[ULTRASOUND_NUM] =
 {
-		{SUB_TANK_HEIGHT, SUB_TANK_LENGTH, SUB_TANK_WIDTH},
 		{RO_TANK_HEIGHT, RO_TANK_LENGTH, RO_TANK_WIDTH},
+		{SUB_TANK_HEIGHT, SUB_TANK_LENGTH, SUB_TANK_WIDTH},
 		{MAIN_TANK_HEIGHT, MAIN_TANK_LENGTH, MAIN_TANK_WIDTH},
 };
 
 static TickType_t			s_NowTick;
 
 static const TickType_t	c_DataInterval		= pdMS_TO_TICKS(1000);		// 水位数据每1秒采集一次（后续再看看是否提升到500ms）
-static const uint8_t		c_NSeconds			= 5;						// N秒平均值是多少秒
+static const uint8_t		c_NSeconds			= 7;						// N秒平均值是多少秒 （需要考虑最大值和最小值会被删除）
 
 static struMyTimer			s_WLTimerArray[5];
 static struMyTimerQueue		s_WLTimerQueue = {s_WLTimerArray, sizeof(s_WLTimerArray) / sizeof(s_WLTimerArray[0])};
@@ -214,12 +227,72 @@ void WaterLevelControlTask( void * pvParameters)
 	}
 }
 
+// 计算平均值（去除最大值、最小值，计算平均值）
+uint8_t GetAverage(struWaterLevelData* pData, int16_t pos, uint16_t* pAvg)
+{
+	uint8_t		count = 0;			// 有多少个有效值
+	uint32_t	total = 0;
+	uint8_t		i;
+	uint16_t	usMax, usMin;		// 记录最大最小值
+
+	usMax = 0;
+	usMin = 0Xffff;
+
+	// 从pos开始循环，判断最大值和最小值，并进行累加
+	for (i = 0; i < c_NSeconds; i++)
+	{
+		if (--pos < 0)
+		{
+			pos = WL_BUFFER_SIZE - 1;
+		}
+
+		if (pData->WaterLevelBuffers[pos] > 0)
+		{
+			uint16_t	cur = pData->WaterLevelBuffers[pos];
+			total += cur;
+
+			// 有效数值+1
+			count++;
+
+			// 判断是否是最大/最小值
+			if (cur > usMax)
+			{
+				usMax = cur;
+			}
+
+			if (cur < usMin)
+			{
+				usMin = cur;
+			}
+		}
+	}
+
+	// 至少5个有效值（包含最大最小值）才进行计算，否则就认为计算失败，仍保持上次的平均值
+	if (count > 5)
+	{
+		// 删除最大值
+		total -= usMax;
+
+		// 删除最小值
+		total -= usMin;
+
+		// 计算平均值
+		*pAvg = (uint16_t)(total / (count - 2));
+	}
+	else
+	{
+		count = 0;
+	}
+
+	return count;
+}
+
+
 // 检测、计算水位数据，然后根据水位数据和当前状态进行处理
 void ProcessWaterLevel(void* pvParameters)
 {
-	uint8_t			i, j;
+	uint8_t			i;
 	int16_t			pos;
-	uint32_t		total;
 	uint16_t		wlAvg;
 	uint8_t			count;
 	BaseType_t		bRet;
@@ -227,7 +300,8 @@ void ProcessWaterLevel(void* pvParameters)
 	struWaterLevelData*		pData;
 	Msg*			pMsg;
 
-	for (i = 0; i < ULTRASOUND_NUM; i++)
+	// TODO:后续需要修改这个写死的常量
+	for (i = 0; i < 2; i++)
 	{
 		pData = &s_WaterLevel[i];
 
@@ -245,6 +319,7 @@ void ProcessWaterLevel(void* pvParameters)
 			else
 			{
 				// 换算为实际水位高度
+				LogOutput(LOG_INFO, "Port %d water level = %d.", i, usDistance);
 				usDistance = c_TankSize[i].usHeight - usDistance;
 			}
 		}
@@ -271,33 +346,12 @@ void ProcessWaterLevel(void* pvParameters)
 			pData->BufferPos = 0;
 		}
 
-		// 计算水位平均值
-		pos = (int16_t)pData->BufferPos;
-		total = 0;
-		count = 0;
-
-		// 累加
-		for (j = 0; j < c_NSeconds; j++)
-		{
-			if (--pos < 0)
-			{
-				pos = WL_BUFFER_SIZE - 1;
-			}
-
-			if (pData->WaterLevelBuffers[pos] > 0)
-			{
-				total += pData->WaterLevelBuffers[pos];
-
-				// 有效数值+1
-				count++;
-			}
-		}
-
 		// 计算平均值
 		wlAvg = 0;
+		pos = (int16_t)pData->BufferPos;
+		count = GetAverage(pData, pos, &wlAvg);
 		if (count > 0)
 		{
-			wlAvg = (uint16_t)(total / count);
 			// 比较平均值和前一次计算是否有变化
 			if (!pMsg && (wlAvg != pData->WaterLevel_N))
 			{
@@ -495,7 +549,7 @@ void WL_BackupRefill_Normal_Change(StateMachineFunc pOld)
 	// 关闭备用RO水泵
 	Switch_BackupRoPump(POWER_OFF);
 
-	Logoutput(LOG_INFO, "Backup RO refill mode switch to normal mode.");
+	LogOutput(LOG_INFO, "Backup RO refill mode switch to normal mode.");
 }
 
 // 从所有状态切换到停止

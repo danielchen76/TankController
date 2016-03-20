@@ -38,6 +38,9 @@ typedef enum
 	MSG_AC_POWER,				// 交流电源状态
 	MSG_BACKUP_POWER,			// 备用电源状态
 
+	// 组合控制消息
+	MSG_PAUSE_SYS,				// 系统暂停（主要控制所有泵停机一段时间，加热棒和冷水机则不需要暂停）
+
 	// 其他控制消息
 
 	// GUI
@@ -72,7 +75,10 @@ typedef union
 		BaseType_t	bOk;			// true：电源正常，false：电源异常
 	} Power;
 
-
+	struct Msg_Pause
+	{
+		uint16_t	seconds;		// 暂停秒数，如果为0，等同永久停机
+	} Pause;
 
 	struct Msg_RTCSecond
 	{

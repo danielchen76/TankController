@@ -33,6 +33,8 @@
 static uint8_t s_Buffer[2];			// 缓存两个字节的距离数据
 static uint8_t s_BufferPos;
 
+const uint8_t	c_PortAddr[] = {0xE8, 0xEA};
+
 // 初始化超声波传感器使用的UART，和需要进行多路分配使用的GPIO口
 void InitUltraSoundSensors(void)
 {
@@ -95,6 +97,16 @@ void InitUltraSoundSensors(void)
 	USART_Cmd(USARTwl, ENABLE);
 }
 
+void SendByte(uint8_t data)
+{
+	USART_SendData(USARTwl, data);
+	/* Loop until USART DR register is empty */
+	while (USART_GetFlagStatus(USARTwl, USART_FLAG_TXE) == RESET)
+	{
+		taskYIELD();
+	}
+}
+
 BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 {
 	BitAction pinA, pinB;
@@ -109,13 +121,13 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 	}
 
 	// 切换模拟开关
-	pinA = (Port & 0x01) ? Bit_SET : Bit_RESET;
-	pinB = (Port & 0x02) ? Bit_SET : Bit_RESET;
-	GPIO_WriteBit(CD4052_A_GPIO, CD4052_A_Pin, pinA);
-	GPIO_WriteBit(CD4052_B_GPIO, CD4052_B_Pin, pinB);
-
-	// 检查接收缓冲区是否有数据，如果有则需要清空（避免因为切换模拟开关带来干扰数据进入接收缓冲区）
-	vTaskDelay(2 / portTICK_RATE_MS);			// 延迟2ms，等待切换后稳定
+//	pinA = (Port & 0x01) ? Bit_SET : Bit_RESET;
+//	pinB = (Port & 0x02) ? Bit_SET : Bit_RESET;
+//	GPIO_WriteBit(CD4052_A_GPIO, CD4052_A_Pin, pinA);
+//	GPIO_WriteBit(CD4052_B_GPIO, CD4052_B_Pin, pinB);
+//
+//	// 检查接收缓冲区是否有数据，如果有则需要清空（避免因为切换模拟开关带来干扰数据进入接收缓冲区）
+//	vTaskDelay(2 / portTICK_RATE_MS);			// 延迟2ms，等待切换后稳定
 
 	if (USART_GetFlagStatus(USARTwl, USART_FLAG_RXNE) != RESET)
 	{
@@ -129,18 +141,17 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 	USART_ITConfig(USARTwl, USART_IT_RXNE, ENABLE);
 
 	// 发送测量距离命令
-	USART_SendData(USARTwl, 0x55);
-	/* Loop until USART DR register is empty */
-	while (USART_GetFlagStatus(USARTwl, USART_FLAG_TXE) == RESET)
-	{
-		taskYIELD();
-	}
+	SendByte(c_PortAddr[Port]);
+	vTaskDelay(1 / portTICK_RATE_MS);
+	SendByte(0x02);
+	vTaskDelay(1 / portTICK_RATE_MS);
+	SendByte(0xb4);
 
 	// 使用中断方式，然后控制在100ms内需要完成读取，否则按超时失败。读取两个字节的距离数据
 	// 等待结果
-	for (uint8_t i = 0; i < 100; i++)
+	for (uint16_t i = 0; i < 100; i++)
 	{
-		vTaskDelay(2 / portTICK_RATE_MS);
+		vTaskDelay(1 / portTICK_RATE_MS);
 
 		if (s_BufferPos == 2)
 		{

@@ -18,6 +18,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include <gui.h>
+
 #include "main/controller.h"
 #include "main/TemperatureTask.h"
 #include "msg.h"
@@ -51,6 +53,7 @@
 #define MAIN_TASK_STACK_SIZE		1000
 #define TEMP_TASK_STACK_SIZE		500
 #define WATERLEVEL_TASK_STACK_SIZE	1000
+#define GUI_TASK_STACK_SIZE			1000
 #define LED_TASK_STACK_SIZE			configMINIMAL_STACK_SIZE
 #define LOG_TASK_STACK_SIZE			500
 
@@ -104,7 +107,8 @@ static void MainTask( void * pvParameters)
 	// 初始化水位控制任务
 	InitWaterLevelMsgQueue();
 
-	// 初始化GUI
+	// 启动GUI任务
+	xTaskCreate(GUITask, "GUITask", GUI_TASK_STACK_SIZE, NULL, 2, NULL);
 
 	// 启动任务
 	//xTaskCreate(TempControlTask, "TempTask", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
