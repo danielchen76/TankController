@@ -50,6 +50,12 @@ DMA_InitTypeDef    DMA_InitStructure;
 #define SPI_MASTER_Tx_DMA_FLAG       DMA1_FLAG_TC5
 #define SPI_MASTER_DR_Base           0x4000380C
 
+#define ST7565_LCD_BIAS         ST7565_LCD_BIAS_9
+#define ST7565_ADC              ST7565_ADC_NORMAL
+#define ST7565_COM_SCAN         ST7565_COM_SCAN_DEC
+#define ST7565_PAGE_ORDER       0,1,2,3,4,5,6,7
+#define GDISP_INITIAL_CONTRAST	20
+
 
 static GFXINLINE void init_board(GDisplay *g) {
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -99,8 +105,8 @@ static GFXINLINE void init_board(GDisplay *g) {
 		SPI_InitStructure.SPI_Direction = SPI_Direction_1Line_Tx;
 		SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
 		SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-		SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;
-		SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
+		SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+		SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
 		SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
 #if defined (STM32F10X_LD_VL) || defined (STM32F10X_MD_VL) || defined (STM32F10X_HD_VL)
 		SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
@@ -186,7 +192,7 @@ static GFXINLINE void write_data(GDisplay *g, uint8_t* data, uint16_t length) {
 
 	// 写入数据为10以内时，使用pull方式（1个字节不能使用DMA）
 	// 大于等于10字节的，使用DMA方式。
-	if (length < 10)
+	if (length < 1000)
 	{
 		for (i = 0;  i < length; i++)
 		{

@@ -74,6 +74,13 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 	write_cmd(g, PCD8544_SET_FUNC);
 	write_cmd(g, PCD8544_SET_DISPLAY	| PCD8544_DISPLAY_MODE_NORMAL);
 
+	write_cmd(g, 0x21);	// 使用扩展命令设置LCD模式
+	write_cmd(g, 0xff);	// 设置偏置电压
+	write_cmd(g, 0x06);	// 温度校正
+	write_cmd(g, 0x13);	// 1:48
+	write_cmd(g, 0x20);	// 使用基本命令
+    write_cmd(g, 0x0c);	// 设定显示模式，正常显示
+
 	// Finish Init
 	post_init_board(g);
 

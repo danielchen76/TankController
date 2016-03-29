@@ -15,9 +15,22 @@ void GUITask( void * pvParameters)
 	gfxInit();
 
 	// test
-	gdispDrawLine(82, 0, 82, 47, White);
+//	gdispClear(Black);
+//	for (int j = 0; j < 84; j++)
+//	{
+//
+//		for (int i = 0; i < 48; i++)
+//		{
+//			gdispDrawPixel(j, i, White);
+//			gdispFlush();
+//			vTaskDelay(50 / portTICK_RATE_MS);
+//		}
+//		//gdispFlush();
+//	}
+	gdispFillArea(0, 0, 83, 47, White);
 	gdispFlush();
 
+	//gdispDrawLine(82, 0, 82, 47, White);
 
 	// 循环处理GUI消息
 	while (1)
