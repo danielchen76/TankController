@@ -1,26 +1,31 @@
 /*
- * This file is subject to the terms of the GFX License. If a copy of
- * the license was not distributed with this file, you can obtain one at:
+ * gdisp_lld_U1617s.c
  *
- *              http://ugfx.org/license.html
+ *  Created on: Apr 2, 2016
+ *      Author: daniel
  */
+
+#ifndef DRIVERS_GDISP_U1617S_GDISP_LLD_U1617S_C_
+#define DRIVERS_GDISP_U1617S_GDISP_LLD_U1617S_C_
+
+
 
 #include "gfx.h"
 
 #if GFX_USE_GDISP
 
-#define GDISP_DRIVER_VMT			GDISPVMT_ST7565R
-#include <drivers/gdisp/ST7565R/gdisp_lld_config.h>
+#define GDISP_DRIVER_VMT			GDISPVMT_U1617s
+#include <drivers/gdisp/U1617s/gdisp_lld_config.h>
 #include "src/gdisp/gdisp_driver.h"
 
-#include <board_ST7565R.h>
+#include <board_U1617s.h>
 
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
 #ifndef GDISP_SCREEN_HEIGHT
-	#define GDISP_SCREEN_HEIGHT		64
+	#define GDISP_SCREEN_HEIGHT		128
 #endif
 #ifndef GDISP_SCREEN_WIDTH
 	#define GDISP_SCREEN_WIDTH		128
@@ -34,7 +39,7 @@
 
 #define GDISP_FLG_NEEDFLUSH			(GDISP_FLG_DRIVER<<0)
 
-#include <drivers/gdisp/ST7565R/st7565r.h>
+#include <drivers/gdisp/U1617s/u1617s.h>
 
 /*===========================================================================*/
 /* Driver config defaults for backward compatibility.               	     */
@@ -281,3 +286,7 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 #endif // GDISP_NEED_CONTROL
 
 #endif // GFX_USE_GDISP
+
+
+
+#endif /* DRIVERS_GDISP_U1617S_GDISP_LLD_U1617S_C_ */

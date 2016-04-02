@@ -34,6 +34,9 @@ typedef enum
 	MSG_WATER_OUT_PUMP,			// 换水抽水泵
 	MSG_WATER_IN_PUMP,			// 加注海水泵
 
+	MSG_HEATER,					// 加热棒（在消息中控制一根还是两个工作）
+	MSG_CHILLER,				// 冷水机电源
+
 	// 电源状态变更消息
 	MSG_AC_POWER,				// 交流电源状态
 	MSG_BACKUP_POWER,			// 备用电源状态
@@ -54,7 +57,7 @@ typedef union
 	//Power voltage
 	struct	Msg_Temperature
 	{
-		int16_t		temperature;	// Unit:℃
+		int16_t		temperature;	// Unit:℃ （单位：0.01℃）
 		int16_t		tempAvg;		// 过去N秒的温度平均值
 	}	TankTemperature;
 
@@ -68,6 +71,7 @@ typedef union
 	struct	Msg_Switch
 	{
 		BaseType_t	bOn;			//True:开启
+		uint8_t		param;			// 扩展参数（目前只有加热棒使用），0：控制所有，1：主加热棒，2：副加热棒
 	} 	Switch;
 
 	struct Msg_Power

@@ -108,7 +108,11 @@ static GFXINLINE void init_board(GDisplay *g) {
 		SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
 		SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
 		SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
+#if defined (STM32F10X_LD_VL) || defined (STM32F10X_MD_VL) || defined (STM32F10X_HD_VL)
 		SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
+#else
+		SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
+#endif
 
 		SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
 		SPI_InitStructure.SPI_CRCPolynomial = 7;

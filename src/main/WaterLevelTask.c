@@ -18,10 +18,9 @@
 #include <queue.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include <task.h>
+
 #include <WaterLevelTask.h>
-#include <LogTask.h>
 
 #include "stm32f10x.h"
 
@@ -95,6 +94,7 @@ void MsgPauseSystem(Msg* msg)
 
 	// 控制所有泵进入停机状态
 	// TODO:造浪泵怎么控制？（造浪泵也在这个水位控制任务中控制了？）
+	// 底缸造浪泵在水位控制范围，主缸暂时不需要联动控制，只要提供遥控器/本机菜单控制即可
 }
 
 static struEntry	Entries[] =
@@ -106,7 +106,7 @@ static struEntry	Entries[] =
 	{MSG_PAUSE_SYS,			MsgPauseSystem}
 };
 
-void MsgProcess_entry(void)
+static void MsgProcess_entry(void)
 {
 	Msg* msg;
 	unsigned int i;
@@ -640,6 +640,20 @@ static struStateMachine			s_WLStateMachine =
 		sizeof(c_WLStateMachineChangeEntries) / sizeof(c_WLStateMachineChangeEntries[0]),
 		WL_StopState
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // -------------------------------Command line--------------------------------------------
 static BaseType_t cmd_wlstatus( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
