@@ -162,18 +162,18 @@ void Switch_Heater1(BaseType_t bOn)
 }
 
 // 加热棒（二）
-void Switch_Hearter2(BaseType_t bOn)
+void Switch_Heater2(BaseType_t bOn)
 {
 	SWITCH(bOn, HEATER_2);
 }
 
 // 常闭
 // 冷水机
-#define COLDER_GPIO				GPIOG
-#define COLDER_PIN				GPIO_Pin_4
-void Switch_Colder(BaseType_t bOn)
+#define CHILLER_GPIO				GPIOG
+#define CHILLER_PIN				GPIO_Pin_4
+void Switch_Chiller(BaseType_t bOn)
 {
-	SWITCH(!bOn, COLDER);
+	SWITCH(!bOn, CHILLER);
 }
 
 // 主缸灯光

@@ -119,7 +119,7 @@ BaseType_t DS18B20_Reset(uint8_t id)
 		}
 		else
 		{
-			// 下啦，DS18B20响应
+			// 下拉，DS18B20响应
 			Delay_us(500);		/* 500us延时 */
 			DS18B20_H(id);
 
@@ -199,13 +199,18 @@ uint8_t DS18B20_ReadByte(uint8_t id)
 }
 
 // 读取DS18B20温度，放大100倍。id为温度传感器编号（目前可以支持2个，主缸和底缸各一个）
-int16_t GetTemperature(uint8_t id)
+BaseType_t GetTemperature(uint8_t id, int16_t* pData)
 {
 	uint8_t		i;
 	uint16_t	temp;
 	int32_t		temperature;
 
-	DS18B20_Reset(id);
+	assert_param(pData);
+
+	if ( !(DS18B20_Reset(id)) )
+	{
+		return pdFALSE;
+	}
 	DS18B20_WriteByte(id, DS18B20_COMMAND_SKIPROM);
 	DS18B20_WriteByte(id, DS18B20_COMMAND_CONVERTT);
 
@@ -216,7 +221,10 @@ int16_t GetTemperature(uint8_t id)
 		Delay_us(50 * 1000);
 	}
 
-	DS18B20_Reset(id);
+	if ( !(DS18B20_Reset(id)) )
+	{
+		return pdFALSE;
+	}
 	DS18B20_WriteByte(id, DS18B20_COMMAND_SKIPROM);
 	DS18B20_WriteByte(id, DS18B20_COMMAND_READSCRATCHPAD);
 
@@ -236,6 +244,7 @@ int16_t GetTemperature(uint8_t id)
 
 	// todo:看看是否需要进行四舍五入的处理？
 
-	return (int16_t)temperature;
+	*pData = (int16_t)temperature;
+	return pdTRUE;
 }
 

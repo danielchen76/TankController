@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <WaterLevelTask.h>
+#include <TemperatureTask.h>
 #include "tc_serial.h"
 #include "setting.h"
 
@@ -83,7 +84,8 @@ static const CLI_Command_Definition_t* commands[] =
 	&cmd_def_clearErr,
 	&cmd_def_wlstatus,
 	&cmd_def_wlset,
-	&cmd_def_reboot
+	&cmd_def_reboot,
+	&cmd_def_gettemp
 };
 
 void vRegisterCLICommands( void )

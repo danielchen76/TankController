@@ -22,7 +22,7 @@ typedef enum
 	// 水位和温度更新消息
 	MSG_MAIN_TANK_TEMP,
 	MSG_SUB_TANK_TEMP,
-	MSG_MAIN_WATER_LEVEL,		// 这3个消息顺序依赖4052的Port顺序，所以不能随意调整
+	MSG_MAIN_WATER_LEVEL,
 	MSG_SUB_WATER_LEVEL,
 	MSG_RO_WATER_LEVEL,
 	MSG_SUB_WATER_LEVEL_REF,	// 底缸稳定水位参考值，记录到EEPROM，掉电重启，或者暂停重启后，使用这个作为补水（RO）参考
@@ -36,6 +36,8 @@ typedef enum
 
 	MSG_HEATER,					// 加热棒（在消息中控制一根还是两个工作）
 	MSG_CHILLER,				// 冷水机电源
+	MSG_HEATER_MODE,			// 加热棒工作模式（自动还是手动）
+	MSG_CHILLER_MODE,			// 冷水机工作模式（自动还是手动）
 
 	// 电源状态变更消息
 	MSG_AC_POWER,				// 交流电源状态
@@ -74,6 +76,11 @@ typedef union
 		uint8_t		param;			// 扩展参数（目前只有加热棒使用），0：控制所有，1：主加热棒，2：副加热棒
 	} 	Switch;
 
+	struct Msg_DeviceEnable
+	{
+		BaseType_t	bAuto;			// 是否允许自动控制（这个和Switch有差别）(TRUE:auto, FALSE:manual)
+	}	Mode;
+
 	struct Msg_Power
 	{
 		BaseType_t	bOk;			// true：电源正常，false：电源异常
@@ -102,7 +109,7 @@ typedef union
 	} UIClock;
 
 	// 液晶屏控制消息
-	struct Msg_DisplayOnOff
+	struct Msg_DisplayBackLightOnOff
 	{
 		int16_t		IsOn : 1;
 	} DisplayOnOff;

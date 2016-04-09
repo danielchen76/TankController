@@ -5,13 +5,15 @@
  *      Author: daniel
  */
 
-#ifndef MAIN_TEMPERATURETASK_H_
-#define MAIN_TEMPERATURETASK_H_
+#ifndef INCLUDE_TEMPERATURETASK_H_
+#define INCLUDE_TEMPERATURETASK_H_
 
 #include <FreeRTOS.h>
 
 void InitTempMsgQueue( void );
 void TempControlTask( void * pvParameters);
 
+extern const CLI_Command_Definition_t cmd_def_gettemp;
 
-#endif /* MAIN_TEMPERATURETASK_H_ */
+
+#endif /* INCLUDE_TEMPERATURETASK_H_ */

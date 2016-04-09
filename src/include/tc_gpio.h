@@ -29,13 +29,13 @@ void Switch_SeaPumpOut(BaseType_t bOn);
 void Switch_SeaPumpIn(BaseType_t bOn);
 
 // 220V设备
-void Switch_Colder(BaseType_t bOn);
+void Switch_Chiller(BaseType_t bOn);
 void Switch_MainLight(BaseType_t bOn);
 void Switch_SubLight(BaseType_t bOn);
 
 void Switch_T5H0(BaseType_t bOn);
 void Switch_Heater1(BaseType_t bOn);
-void Switch_Hearter2(BaseType_t bOn);
+void Switch_Heater2(BaseType_t bOn);
 
 // 输入引脚状态
 BaseType_t BackupROHasWater();

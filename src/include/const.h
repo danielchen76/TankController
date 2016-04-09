@@ -20,7 +20,14 @@
 #define RO_TANK_LENGTH			(350 - 10)			// RO缸厚度5mm有机玻璃
 #define RO_TANK_WIDTH			(200 - 10)
 
-
+typedef enum
+{
+	GLOBAL_STATE_RUNNING,				// 正常运行
+	GLOBAL_STATE_STOP,					// 停机
+	GLOBAL_STATE_CHANGEWATER,			// 换水
+	GLOBAL_STATE_FEED,					// 喂食模式
+	GLOBAL_STATE_NIGHTMODE,				// 夜间模式
+} enumGlobalState;
 
 
 #endif /* INCLUDE_CONST_H_ */

@@ -6,7 +6,7 @@
  *      Author: daniel
  */
 
-#include "controller.h"
+#include <controller.h>
 #include "Msg.h"
 #include "TimerQueue.h"
 #include "StateMachine.h"

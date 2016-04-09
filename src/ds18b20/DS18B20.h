@@ -42,7 +42,7 @@ BaseType_t InitDS18B20();
 
 #define MAIN_TANK_TEMP			0
 #define SUB_TANK_TEMP			1
-int16_t GetTemperature(uint8_t id);
+BaseType_t GetTemperature(uint8_t id, int16_t* pData);
 
 
 #endif /* TESTDS18B20_DS18B20_H_ */

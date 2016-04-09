@@ -5,6 +5,7 @@
 
 // ----------------------------------------------------------------------------
 
+#include <controller.h>
 #include <LEDTask.h>
 #include <setting.h>
 #include <stdio.h>
@@ -19,15 +20,15 @@
 #include "task.h"
 
 #include <gui.h>
+#include <TemperatureTask.h>
 
-#include "main/controller.h"
-#include "main/TemperatureTask.h"
 #include "msg.h"
 #include "i2c/stm32_eval_i2c_ee.h"
 #include "tc_rtc.h"
 #include "logTask.h"
 #include "tc_spi.h"
 #include "tc_adc.h"
+#include "ds18b20/DS18B20.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -73,7 +74,7 @@ static void MainTask( void * pvParameters)
 	InitLEDTask();
 
 	// 初始化LED指示灯线程
-	xTaskCreate(LEDTask, "LEDTask", LED_TASK_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(LEDTask, "LED", LED_TASK_STACK_SIZE, NULL, 1, NULL);
 
 	// E2PROM，加载默认配置，和从E2PROM中读取保存的配置
 	/* Initialize the I2C EEPROM driver ----------------------------------------*/
@@ -86,7 +87,7 @@ static void MainTask( void * pvParameters)
 
 	// 初始化日志
 	InitLogTask();
-	xTaskCreate(LogTask, "LogTask", LOG_TASK_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(LogTask, "Log", LOG_TASK_STACK_SIZE, NULL, 1, NULL);
 
 	// 初始化所有GPIO口
 	InitPowerGPIO();
@@ -95,11 +96,14 @@ static void MainTask( void * pvParameters)
 	// 初始化水位用超声波探头
 	InitUltraSoundSensors();
 
-	// 初始化ADC
+	// 初始化ADC（电压监控和切换在Main主任务中执行）
 	InitADC();
 
 	// TODO:TEST
 	GetDCVoltage();
+
+	// 初始化温度探头
+	InitDS18B20();
 
 	// 初始化温度控制任务
 	InitTempMsgQueue();
@@ -108,11 +112,11 @@ static void MainTask( void * pvParameters)
 	InitWaterLevelMsgQueue();
 
 	// 启动GUI任务
-	xTaskCreate(GUITask, "GUITask", GUI_TASK_STACK_SIZE, NULL, 2, NULL);
+	xTaskCreate(GUITask, "GUI", GUI_TASK_STACK_SIZE, NULL, 2, NULL);
 
 	// 启动任务
-	//xTaskCreate(TempControlTask, "TempTask", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(WaterLevelControlTask, "WaterLevelTask", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	//xTaskCreate(TempControlTask, "TempControl", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	xTaskCreate(WaterLevelControlTask, "WaterLevel", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
 
 	// 进入主任务的消息处理函数（不再返回）
 	controller_entry();

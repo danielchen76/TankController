@@ -31,7 +31,7 @@
 	#define GDISP_SCREEN_WIDTH		128
 #endif
 #ifndef GDISP_INITIAL_CONTRAST
-	#define GDISP_INITIAL_CONTRAST	30
+	#define GDISP_INITIAL_CONTRAST	27
 #endif
 #ifndef GDISP_INITIAL_BACKLIGHT
 	#define GDISP_INITIAL_BACKLIGHT	100
@@ -40,22 +40,6 @@
 #define GDISP_FLG_NEEDFLUSH			(GDISP_FLG_DRIVER<<0)
 
 #include <drivers/gdisp/U1617s/u1617s.h>
-
-/*===========================================================================*/
-/* Driver config defaults for backward compatibility.               	     */
-/*===========================================================================*/
-#ifndef ST7565_LCD_BIAS
-  #define ST7565_LCD_BIAS         ST7565_LCD_BIAS_9
-#endif
-#ifndef ST7565_ADC
-  #define ST7565_ADC              ST7565_ADC_NORMAL
-#endif
-#ifndef ST7565_COM_SCAN
-  #define ST7565_COM_SCAN         ST7565_COM_SCAN_INC
-#endif
-#ifndef ST7565_PAGE_ORDER
-  #define ST7565_PAGE_ORDER       0,1,2,3,4,5,6,7
-#endif
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
@@ -70,8 +54,12 @@
 #define delay(us)			gfxSleepMicroseconds(us)
 #define delay_ms(ms)		gfxSleepMilliseconds(ms)
 
-#define xyaddr(x, y)		((x) + ((y)>>3)*GDISP_SCREEN_WIDTH)
-#define xybit(y)			(1<<((y)&7))
+#define xyaddr(x, y)		( (GDISP_SCREEN_WIDTH >> 2) * y + (x >> 2) )
+#define xybits(y)			((x % 4) >> 1)
+
+// Display Buffer(4 Shade mode)
+#define DISPLAY_RAM_SIZE	(GDISP_SCREEN_HEIGHT * GDISP_SCREEN_WIDTH / 8) * 2
+static uint8_t				s_DisplayRAM[DISPLAY_RAM_SIZE];
 
 /*===========================================================================*/
 /* Driver exported functions.                                                */
@@ -86,49 +74,40 @@
 
 LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 	// The private area is the display surface.
-	g->priv = gfxAlloc(GDISP_SCREEN_HEIGHT * GDISP_SCREEN_WIDTH / 8);
+	//g->priv = gfxAlloc(GDISP_SCREEN_HEIGHT * GDISP_SCREEN_WIDTH / 8);
+	g->priv = s_DisplayRAM;
 
 	// Initialise the board interface
 	init_board(g);
 
 	// Hardware reset
 	setpin_reset(g, TRUE);
-	gfxSleepMilliseconds(20);
+	gfxSleepMilliseconds(200);
 	setpin_reset(g, FALSE);
-	gfxSleepMilliseconds(20);
+	gfxSleepMilliseconds(50);
 
 	acquire_bus(g);
 
-    write_cmd(g, ST7565_LCD_BIAS);
-    write_cmd(g, ST7565_ADC);
-    write_cmd(g, ST7565_COM_SCAN);
+	write_cmd(g, 0xE2);//system reset
+	delay(10);
+	write_cmd(g, 0x27);
+	write_cmd(g, 0x2b);
+	write_cmd(g, 0x2f); //set pump control
+	write_cmd(g, 0xeb); //set bias=1/11
+	write_cmd2(g, 0x81, 0x33); //set contrast,when 0x36:set PM=12,vop=12.8v,4c
+	write_cmd(g, 0xa3);
+	//write_cmd(g, 0xa9); //set linerate mux,a2
+	write_cmd(g, 0xc8);
+	write_cmd(g, 0x0b);
+	write_cmd(g, 0x89);	// RAM address control(auto,page first)
+	write_cmd(g, 0xc4); //MY=1,MX=0:从左到右，再从上到下。
+	write_cmd(g, 0xf1); //f1
+	write_cmd(g, 0x7f);
+	//write_cmd(g, 0xd3); //gray shade set
+	//write_cmd(g, 0xd7); //gray shade set
+	write_cmd(g, 0xAf); //set display enable
 
-	write_cmd(g, ST7565_START_LINE | 0);
-
-	write_cmd2(g, ST7565_CONTRAST, GDISP_INITIAL_CONTRAST*64/101);
-	write_cmd(g, ST7565_RESISTOR_RATIO | 0x3);
-//
-//	write_cmd(g, 0x23);
-//	write_cmd(g, 0x81);
-//	write_cmd(g, 0x16);
-
-	// turn on voltage converter (VC=1, VR=0, VF=0)
-	write_cmd(g, ST7565_POWER_CONTROL | 0x04);
-	delay_ms(50);
-
-	// turn on voltage regulator (VC=1, VR=1, VF=0)
-	write_cmd(g, ST7565_POWER_CONTROL | 0x06);
-	delay_ms(50);
-
-	// turn on voltage follower (VC=1, VR=1, VF=1)
-	write_cmd(g, ST7565_POWER_CONTROL | 0x07);
-	delay_ms(50);
-
-	write_cmd(g, ST7565_DISPLAY_ON);
-	write_cmd(g, ST7565_ALLON_NORMAL);
-	write_cmd(g, ST7565_POSITIVE_DISPLAY);	// Disable Inversion of display.
-
-	//write_cmd(g, ST7565_RMW);
+	delay_ms(10);
 
     // Finish Init
     post_init_board(g);
@@ -148,21 +127,21 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 
 #if GDISP_HARDWARE_FLUSH
 	LLDSPEC void gdisp_lld_flush(GDisplay *g) {
-		unsigned	p;
-
 		// Don't flush if we don't need it.
 		if (!(g->flags & GDISP_FLG_NEEDFLUSH))
 			return;
 
 		acquire_bus(g);
-		uint8_t pagemap[8]={ST7565_PAGE_ORDER};
-		for (p = 0; p < 8; p++) {
-			write_cmd(g, ST7565_PAGE | pagemap[p]);
-			write_cmd(g, ST7565_COLUMN_MSB | 0);
-			write_cmd(g, ST7565_COLUMN_LSB | 0);
-			//write_cmd(g, ST7565_RMW);
-			write_data(g, RAM(g) + (p*GDISP_SCREEN_WIDTH), GDISP_SCREEN_WIDTH);
-		}
+
+		write_cmd(g, 0x60); //行地址低4 位
+		write_cmd(g, 0x70); //行地址高3 位
+		write_cmd(g, 0x00); //列地址
+
+		//delay(1);
+		taskYIELD();
+
+		write_data(g, RAM(g), DISPLAY_RAM_SIZE);
+
 		release_bus(g);
 
 		g->flags &= ~GDISP_FLG_NEEDFLUSH;
@@ -172,6 +151,8 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 #if GDISP_HARDWARE_DRAWPIXEL
 	LLDSPEC void gdisp_lld_draw_pixel(GDisplay *g) {
 		coord_t		x, y;
+		uint8_t *	p;
+		uint8_t		bits;
 
 		switch(g->g.Orientation) {
 		default:
@@ -192,10 +173,12 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 			y = g->p.x;
 			break;
 		}
-		if (gdispColor2Native(g->p.color) != Black)
-			RAM(g)[xyaddr(x, y)] |= xybit(y);
-		else
-			RAM(g)[xyaddr(x, y)] &= ~xybit(y);
+
+		p = RAM(g) + xyaddr(x, y);
+		bits = (x % 4) << 1;
+		*p &= ~(0x3 << bits);
+		*p |= ((g->p.color & 0x3) << bits);
+
 		g->flags |= GDISP_FLG_NEEDFLUSH;
 	}
 #endif
@@ -223,7 +206,7 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 			x = g->p.x;
 			break;
 		}
-		return (RAM(g)[xyaddr(x, y)] & xybit(y)) ? White : Black;
+		return 0; //(RAM(g)[xyaddr(x, y)] & xybit(y)) ? White : Black;
 	}
 #endif
 
@@ -238,12 +221,12 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 			case powerSleep:
 			case powerDeepSleep:
 				acquire_bus(g);
-				write_cmd(g, ST7565_DISPLAY_OFF);
+				write_cmd(g, 0xAE);
 				release_bus(g);
 				break;
 			case powerOn:
 				acquire_bus(g);
-				write_cmd(g, ST7565_DISPLAY_ON);
+				write_cmd(g, 0xAF);
 				release_bus(g);
 				break;
 			default:
@@ -277,7 +260,7 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
             if ((unsigned)g->p.ptr > 100)
             	g->p.ptr = (void *)100;
 			acquire_bus(g);
-			write_cmd2(g, ST7565_CONTRAST, ((((unsigned)g->p.ptr)<<6)/101) & 0x3F);
+			write_cmd2(g, 0x81, ((unsigned)g->p.ptr) * 193 / 100);
 			release_bus(g);
             g->g.Contrast = (unsigned)g->p.ptr;
 			return;
