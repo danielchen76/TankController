@@ -103,8 +103,8 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 	write_cmd(g, 0xc4); //MY=1,MX=0:从左到右，再从上到下。
 	write_cmd(g, 0xf1); //f1
 	write_cmd(g, 0x7f);
-	//write_cmd(g, 0xd3); //gray shade set
-	//write_cmd(g, 0xd7); //gray shade set
+	write_cmd(g, 0xd3); //gray shade set
+	write_cmd(g, 0xd7); //gray shade set
 	write_cmd(g, 0xAf); //set display enable
 
 	delay_ms(10);

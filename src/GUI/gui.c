@@ -37,7 +37,7 @@ void GUITask( void * pvParameters)
 	gdispDrawString(10, 30, "Display", font1, 0x2);
 	gdispDrawString(10, 50, "Display", font1, 0x1);
 
-	gdispDrawLine(0, 90, 127, 90, 0x3);
+	gdispDrawLine(0, 90, 127, 90, White);
 	gdispDrawLine(0, 91, 127, 91, 0x2);
 	gdispDrawLine(0, 92, 127, 92, 0x1);
 
