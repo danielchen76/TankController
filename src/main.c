@@ -116,7 +116,23 @@ static void MainTask( void * pvParameters)
 
 	// 启动任务
 	//xTaskCreate(TempControlTask, "TempControl", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(WaterLevelControlTask, "WaterLevel", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	//xTaskCreate(WaterLevelControlTask, "WaterLevel", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+
+	// TODO: TEST gpio
+	GPIO_SetBits(GPIOG, GPIO_Pin_8);
+	GPIO_SetBits(GPIOG, GPIO_Pin_9);
+	GPIO_SetBits(GPIOG, GPIO_Pin_10);
+
+	//GPIO_ResetBits(GPIOG, GPIO_Pin_9);
+
+	//GPIO_SetBits(GPIOG, GPIO_Pin_9);
+	GPIO_SetBits(GPIOG, GPIO_Pin_11);
+	GPIO_SetBits(GPIOG, GPIO_Pin_12);
+	GPIO_SetBits(GPIOG, GPIO_Pin_13);
+	GPIO_SetBits(GPIOG, GPIO_Pin_14);
+	GPIO_SetBits(GPIOG, GPIO_Pin_15);
+
+
 
 	// 进入主任务的消息处理函数（不再返回）
 	controller_entry();

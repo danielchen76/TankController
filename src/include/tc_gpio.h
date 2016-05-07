@@ -16,6 +16,7 @@
 
 void InitPowerGPIO();
 void InitSensorsGPIO();
+void InitPWMGPIO();
 
 // 24v/12v低压设备开关
 void Switch_MainPump(BaseType_t bOn);
