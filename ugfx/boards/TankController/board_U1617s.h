@@ -151,8 +151,7 @@ static GFXINLINE void set_backlight(GDisplay *g, uint8_t percent) {
 	(void) g;
 	(void) percent;
 
-	// 设置背光亮度（使用PWM引脚控制亮度百分比）
-
+	// 设置背光亮度
 }
 
 static GFXINLINE void acquire_bus(GDisplay *g) {

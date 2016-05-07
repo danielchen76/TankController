@@ -227,7 +227,6 @@ LLDSPEC bool_t gdisp_lld_init(GDisplay *g) {
 			case powerOn:
 				acquire_bus(g);
 				write_cmd(g, 0xAF);
-				delay_ms(10);
 				release_bus(g);
 				break;
 			default:

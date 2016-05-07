@@ -22,8 +22,3 @@ SPI2:
 
 SPI3:
 
-DS18B20:
-Use TIM5 as us delay
-
-LCD Backlight PWM:
-Use TIM?
