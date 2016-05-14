@@ -32,6 +32,8 @@ typedef struct
 void InitTimerQueue(struMyTimerQueue* pTimerQueue);
 int16_t AddTimer(struMyTimerQueue* pTimerQueue, TickType_t tickNow, TickType_t timeout, BaseType_t bReload, TimerCallback_t pFunc, void* pvParameters);
 void RemoveTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex);
+void UpdateTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex, TickType_t timeout, BaseType_t bReload, void* pvParameters);
+void ResetTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex);
 
 void CheckTimerQueue(struMyTimerQueue* pTimerQueue, TickType_t tickNow);
 

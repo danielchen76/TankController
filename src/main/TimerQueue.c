@@ -53,6 +53,29 @@ void RemoveTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex)
 	pTimerQueue->pQueue[timerIndex].pFunc = NULL;
 }
 
+void UpdateTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex, TickType_t timeout, BaseType_t bReload, void* pvParameters)
+{
+	struMyTimer*	pTimer;
+	assert_param(timerIndex < pTimerQueue->size);
+
+	pTimer = pTimerQueue->pQueue + timerIndex;
+	if (!pTimer->pFunc)
+	{
+		// 更新定时器参数
+		pTimer->timeout 		= timeout;
+		pTimer->bReload 		= bReload;
+		pTimer->pvParameters 	= pvParameters;
+	}
+}
+
+// 更新定时器，定时器重新计时（用于菜单超时等）
+void ResetTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex)
+{
+	assert_param(timerIndex < pTimerQueue->size);
+
+	pTimerQueue->pQueue[timerIndex].tLastTick = xTaskGetTickCount();
+}
+
 // 检查Timer队列，对超时的部分进行回调执行
 void CheckTimerQueue(struMyTimerQueue* pTimerQueue, TickType_t tickNow)
 {

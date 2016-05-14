@@ -19,7 +19,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include <gui.h>
 #include <TemperatureTask.h>
 
 #include "msg.h"
@@ -29,6 +28,7 @@
 #include "tc_spi.h"
 #include "tc_adc.h"
 #include "ds18b20/DS18B20.h"
+#include <DisplayButtonTask.h>
 
 // ----------------------------------------------------------------------------
 //
@@ -55,7 +55,7 @@
 #define TEMP_TASK_STACK_SIZE		500
 #define WATERLEVEL_TASK_STACK_SIZE	1000
 #define GUI_TASK_STACK_SIZE			1000
-#define LED_TASK_STACK_SIZE			configMINIMAL_STACK_SIZE
+#define LEDBUTTON_TASK_STACK_SIZE	1000
 #define LOG_TASK_STACK_SIZE			500
 
 // 主线程，初始化使用，以及所有的主消息处理
@@ -71,10 +71,11 @@ static void MainTask( void * pvParameters)
 	InitMsgArray();
 	InitMainMsgQueue();
 
-	InitLEDTask();
+	// 初始化数码管和旋转编码器相关的接口
+	InitLEDButton();
 
-	// 初始化LED指示灯线程
-	xTaskCreate(LEDTask, "LED", LED_TASK_STACK_SIZE, NULL, 1, NULL);
+	// 初始化LED按键灯线程
+	xTaskCreate(DisplayButtonTask, "LED", LEDBUTTON_TASK_STACK_SIZE, NULL, 1, NULL);
 
 	// E2PROM，加载默认配置，和从E2PROM中读取保存的配置
 	/* Initialize the I2C EEPROM driver ----------------------------------------*/
@@ -111,8 +112,8 @@ static void MainTask( void * pvParameters)
 	// 初始化水位控制任务
 	InitWaterLevelMsgQueue();
 
-	// 启动GUI任务
-	xTaskCreate(GUITask, "GUI", GUI_TASK_STACK_SIZE, NULL, 2, NULL);
+	// 启动LED数码管和按键控制任务
+	InitDisplayButtonTask();
 
 	// 启动任务
 	//xTaskCreate(TempControlTask, "TempControl", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);

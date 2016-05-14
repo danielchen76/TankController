@@ -109,8 +109,6 @@ void SendByte(uint8_t data)
 
 BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 {
-	BitAction pinA, pinB;
-
 	assert_param(pData);
 
 	// 判断Port合法性
@@ -119,15 +117,6 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 		assert_param(pdFALSE);
 		return pdFALSE;
 	}
-
-	// 切换模拟开关
-//	pinA = (Port & 0x01) ? Bit_SET : Bit_RESET;
-//	pinB = (Port & 0x02) ? Bit_SET : Bit_RESET;
-//	GPIO_WriteBit(CD4052_A_GPIO, CD4052_A_Pin, pinA);
-//	GPIO_WriteBit(CD4052_B_GPIO, CD4052_B_Pin, pinB);
-//
-//	// 检查接收缓冲区是否有数据，如果有则需要清空（避免因为切换模拟开关带来干扰数据进入接收缓冲区）
-//	vTaskDelay(2 / portTICK_RATE_MS);			// 延迟2ms，等待切换后稳定
 
 	if (USART_GetFlagStatus(USARTwl, USART_FLAG_RXNE) != RESET)
 	{
