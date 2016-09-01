@@ -48,7 +48,7 @@ typedef enum
 
 	// 其他控制消息
 
-	// LED Button
+	// LED、Button、数码管、蜂鸣器
 	MSG_BUTTON_DOWN,			// 按键按下
 	MSG_BUTTON_UP,				// 按键松开
 	MSG_BUTTON_FWD,				// 旋钮向前转
@@ -56,8 +56,6 @@ typedef enum
 
 	MSG_ALARM_ERROR,			// 告警音（错误，连续）
 	MSG_ALARM_WARN,				// 告警音（提示，间歇，短暂提示）
-
-
 
 
 } enumMsg;

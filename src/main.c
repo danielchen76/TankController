@@ -71,11 +71,15 @@ static void MainTask( void * pvParameters)
 	InitMsgArray();
 	InitMainMsgQueue();
 
+	// 初始化日志
+	InitLogTask();
+	xTaskCreate(LogTask, "Log", LOG_TASK_STACK_SIZE, NULL, 1, NULL);
+
 	// 初始化数码管和旋转编码器相关的接口
-	InitLEDButton();
+	//InitDisplayButtonTask();
 
 	// 初始化LED按键灯线程
-	xTaskCreate(DisplayButtonTask, "LED", LEDBUTTON_TASK_STACK_SIZE, NULL, 1, NULL);
+	//xTaskCreate(DisplayButtonTask, "LED", LEDBUTTON_TASK_STACK_SIZE, NULL, 1, NULL);
 
 	// E2PROM，加载默认配置，和从E2PROM中读取保存的配置
 	/* Initialize the I2C EEPROM driver ----------------------------------------*/
@@ -85,10 +89,6 @@ static void MainTask( void * pvParameters)
 	// 初始化Shell
 	InitShell();
 	EnableBluetooth(pdTRUE);		// TODO: 需要最后再确定是否默认开启蓝牙模块，还是通过手动方式开启。
-
-	// 初始化日志
-	InitLogTask();
-	xTaskCreate(LogTask, "Log", LOG_TASK_STACK_SIZE, NULL, 1, NULL);
 
 	// 初始化所有GPIO口
 	InitPowerGPIO();
@@ -112,26 +112,23 @@ static void MainTask( void * pvParameters)
 	// 初始化水位控制任务
 	InitWaterLevelMsgQueue();
 
-	// 启动LED数码管和按键控制任务
-	InitDisplayButtonTask();
-
 	// 启动任务
 	//xTaskCreate(TempControlTask, "TempControl", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
-	//xTaskCreate(WaterLevelControlTask, "WaterLevel", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	xTaskCreate(WaterLevelControlTask, "WaterLevel", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
 
 	// TODO: TEST gpio
-	GPIO_SetBits(GPIOG, GPIO_Pin_8);
-	GPIO_SetBits(GPIOG, GPIO_Pin_9);
-	GPIO_SetBits(GPIOG, GPIO_Pin_10);
+//	GPIO_SetBits(GPIOG, GPIO_Pin_8);
+//	GPIO_SetBits(GPIOG, GPIO_Pin_9);
+//	GPIO_SetBits(GPIOG, GPIO_Pin_10);
 
 	//GPIO_ResetBits(GPIOG, GPIO_Pin_9);
 
 	//GPIO_SetBits(GPIOG, GPIO_Pin_9);
-	GPIO_SetBits(GPIOG, GPIO_Pin_11);
-	GPIO_SetBits(GPIOG, GPIO_Pin_12);
-	GPIO_SetBits(GPIOG, GPIO_Pin_13);
-	GPIO_SetBits(GPIOG, GPIO_Pin_14);
-	GPIO_SetBits(GPIOG, GPIO_Pin_15);
+//	GPIO_SetBits(GPIOG, GPIO_Pin_11);
+//	GPIO_SetBits(GPIOG, GPIO_Pin_12);
+//	GPIO_SetBits(GPIOG, GPIO_Pin_13);
+//	GPIO_SetBits(GPIOG, GPIO_Pin_14);
+//	GPIO_SetBits(GPIOG, GPIO_Pin_15);
 
 
 

@@ -57,7 +57,7 @@ void InitADC()
 
 }
 
-// 获取DC电源电压
+// 获取主电源电压
 int16_t GetDCVoltage()
 {
 	uint16_t	value;
@@ -73,6 +73,25 @@ int16_t GetDCVoltage()
 	// Get the conversion value
 	value = ADC_GetConversionValue(ADC1);
 
-	// TODO
+	// TODO 转换电压到0.01v基准单位上
+
 	return (int16_t)value;
 }
+
+// 获取备用电池电压
+int16_t GetBackupBatteryVoltage()
+{
+	return 0;
+}
+
+// 获取主电源电流
+int16_t GetMainPowerCurrent()
+{
+	return 0;
+}
+
+// 获取主泵电流
+
+// 获取蛋分电流
+
+

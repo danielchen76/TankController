@@ -59,7 +59,7 @@ void UpdateTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex, TickType_t t
 	assert_param(timerIndex < pTimerQueue->size);
 
 	pTimer = pTimerQueue->pQueue + timerIndex;
-	if (!pTimer->pFunc)
+	if (pTimer->pFunc)
 	{
 		// 更新定时器参数
 		pTimer->timeout 		= timeout;

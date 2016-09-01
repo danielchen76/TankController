@@ -21,14 +21,14 @@
 
 // CD4052的A、B引脚
 // Pin A
-#define CD4052_A_GPIO           	GPIOE
-#define CD4052_A_GPIO_CLK       	RCC_APB2Periph_GPIOE
-#define CD4052_A_Pin            	GPIO_Pin_0
-
-// Pin B
-#define CD4052_B_GPIO           	GPIOE
-#define CD4052_B_GPIO_CLK       	RCC_APB2Periph_GPIOE
-#define CD4052_B_Pin            	GPIO_Pin_1
+//#define CD4052_A_GPIO           	GPIOE
+//#define CD4052_A_GPIO_CLK       	RCC_APB2Periph_GPIOE
+//#define CD4052_A_Pin            	GPIO_Pin_0
+//
+//// Pin B
+//#define CD4052_B_GPIO           	GPIOE
+//#define CD4052_B_GPIO_CLK       	RCC_APB2Periph_GPIOE
+//#define CD4052_B_Pin            	GPIO_Pin_1
 
 static uint8_t s_Buffer[2];			// 缓存两个字节的距离数据
 static uint8_t s_BufferPos;
@@ -47,7 +47,6 @@ void InitUltraSoundSensors(void)
 	RCC_APB2PeriphClockCmd(USARTwl_GPIO_CLK | RCC_APB2Periph_AFIO, ENABLE);
 
 	/*!< GPIO configuration */
-
 	GPIO_PinRemapConfig(GPIO_Remap_USART2, ENABLE);
 
 	/* Configure USART Rx as input floating */
@@ -62,17 +61,17 @@ void InitUltraSoundSensors(void)
 	GPIO_Init(USARTwl_GPIO, &GPIO_InitStructure);
 
 	// 初始化模拟开关CD4052的控制引脚
-	RCC_APB2PeriphClockCmd(CD4052_A_GPIO_CLK | CD4052_B_GPIO_CLK, ENABLE);
-
-	GPIO_InitStructure.GPIO_Pin = CD4052_A_Pin;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(CD4052_A_GPIO, &GPIO_InitStructure);
-
-	GPIO_InitStructure.GPIO_Pin = CD4052_B_Pin;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(CD4052_B_GPIO, &GPIO_InitStructure);
+//	RCC_APB2PeriphClockCmd(CD4052_A_GPIO_CLK | CD4052_B_GPIO_CLK, ENABLE);
+//
+//	GPIO_InitStructure.GPIO_Pin = CD4052_A_Pin;
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+//	GPIO_Init(CD4052_A_GPIO, &GPIO_InitStructure);
+//
+//	GPIO_InitStructure.GPIO_Pin = CD4052_B_Pin;
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+//	GPIO_Init(CD4052_B_GPIO, &GPIO_InitStructure);
 
 	// 初始化串口2，用于超声波距离测量
 	USART_InitStructure.USART_BaudRate = 9600;
