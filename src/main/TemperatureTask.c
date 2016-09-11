@@ -250,20 +250,20 @@ static BaseType_t cmd_gettemp( char *pcWriteBuffer, size_t xWriteBufferLen, cons
 	(void)pcCommandString;
 
 	// temperature
-	snprintf(WriteBuffer, sizeof(WriteBuffer), "Main Tank:%d.%d\r\n", s_MainTemperature / 100, s_MainTemperature % 100);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Main Tank:%d.%02d(%d)\r\n", s_MainTemperature / 100, s_MainTemperature % 100, s_MainTemperature);
 	strncpy(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
-	snprintf(WriteBuffer, sizeof(WriteBuffer), "Sub Tank:%d.%d\r\n", s_SubTemperature / 100, s_SubTemperature % 100);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Sub Tank:%d.%02d(%d)\r\n", s_SubTemperature / 100, s_SubTemperature % 100, s_SubTemperature);
 	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
 
 	// Chiller
-	snprintf(WriteBuffer, sizeof(WriteBuffer), "Chiller auto {%s}, switch {%s}",
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Chiller auto {%s}, switch {%s}\r\n",
 			s_bChillerAuto ? "Auto" : "Manual", s_bChillerOn ? "On" : "Off");
-	strncpy(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
 
 	// Heater
-	snprintf(WriteBuffer, sizeof(WriteBuffer), "Heater auto {%s}, switch {%s}",
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Heater auto {%s}, switch {%s}\r\n",
 			s_bHeaterAuto ? "Auto" : "Manual", s_bHeaterOn ? "On" : "Off");
-	strncpy(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
 	return pdFALSE;
 }
 

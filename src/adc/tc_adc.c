@@ -91,7 +91,15 @@ int16_t GetMainPowerCurrent()
 }
 
 // 获取主泵电流
+int16_t GetMainPumpCurrent()
+{
+	return 0;
+}
 
 // 获取蛋分电流
+int16_t GetProteinSkimmerCurrent()
+{
+	return 0;
+}
 
 

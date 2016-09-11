@@ -76,10 +76,10 @@ static void MainTask( void * pvParameters)
 	xTaskCreate(LogTask, "Log", LOG_TASK_STACK_SIZE, NULL, 1, NULL);
 
 	// 初始化数码管和旋转编码器相关的接口
-	//InitDisplayButtonTask();
+	InitDisplayButtonTask();
 
 	// 初始化LED按键灯线程
-	//xTaskCreate(DisplayButtonTask, "LED", LEDBUTTON_TASK_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(DisplayButtonTask, "LED", LEDBUTTON_TASK_STACK_SIZE, NULL, 1, NULL);
 
 	// E2PROM，加载默认配置，和从E2PROM中读取保存的配置
 	/* Initialize the I2C EEPROM driver ----------------------------------------*/
@@ -113,22 +113,29 @@ static void MainTask( void * pvParameters)
 	InitWaterLevelMsgQueue();
 
 	// 启动任务
-	//xTaskCreate(TempControlTask, "TempControl", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
+	xTaskCreate(TempControlTask, "TempControl", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
 	xTaskCreate(WaterLevelControlTask, "WaterLevel", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
 
 	// TODO: TEST gpio
-//	GPIO_SetBits(GPIOG, GPIO_Pin_8);
-//	GPIO_SetBits(GPIOG, GPIO_Pin_9);
-//	GPIO_SetBits(GPIOG, GPIO_Pin_10);
+	// 24v/12v低压设备开关
+	Switch_MainPump(pdTRUE);
+	Switch_ProteinSkimmer(pdTRUE);
+	Switch_WaveMaker(pdTRUE);
+	Switch_WaveMakerNightMode(pdTRUE);
+	Switch_SubWaveMaker(pdTRUE);
+	Switch_RoPump(pdTRUE);
+	Switch_BackupRoPump(pdTRUE);
+	Switch_SeaPumpOut(pdTRUE);
+	Switch_SeaPumpIn(pdTRUE);
 
-	//GPIO_ResetBits(GPIOG, GPIO_Pin_9);
+	// 220V设备
+	Switch_Chiller(pdTRUE);
+	Switch_MainLight(pdTRUE);
+	Switch_SubLight(pdTRUE);
 
-	//GPIO_SetBits(GPIOG, GPIO_Pin_9);
-//	GPIO_SetBits(GPIOG, GPIO_Pin_11);
-//	GPIO_SetBits(GPIOG, GPIO_Pin_12);
-//	GPIO_SetBits(GPIOG, GPIO_Pin_13);
-//	GPIO_SetBits(GPIOG, GPIO_Pin_14);
-//	GPIO_SetBits(GPIOG, GPIO_Pin_15);
+	Switch_T5H0(pdTRUE);
+	Switch_Heater1(pdTRUE);
+	Switch_Heater2(pdTRUE);
 
 
 

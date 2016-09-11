@@ -15,5 +15,9 @@ void InitADC();
 int16_t GetDCVoltage();
 int16_t GetBackupDCVoltage();
 
+int16_t GetMainPowerCurrent();
+int16_t GetMainPumpCurrent();
+int16_t GetProteinSkimmerCurrent();
+
 
 #endif /* INCLUDE_TC_ADC_H_ */

@@ -6,6 +6,7 @@
  */
 
 #include "DS18B20.h"
+#include "util.h"
 
 void initTIM5();
 void Delay_us(uint16_t us);
@@ -20,8 +21,8 @@ uint8_t DS18B20_ReadByte(uint8_t id);
 // 定义每个DS18B20的GPIO口
 static struDS18B20_GPIO_t		s_DS18B20s[] =
 {
-		{GPIO_Pin_0, GPIOF, RCC_APB2Periph_GPIOF},
-		{GPIO_Pin_1, GPIOF, RCC_APB2Periph_GPIOF}
+		{GPIO_Pin_3, GPIOF, RCC_APB2Periph_GPIOF},
+		{GPIO_Pin_2, GPIOF, RCC_APB2Periph_GPIOF}
 };
 
 static uint8_t		s_Scratchpad[9];
@@ -70,13 +71,14 @@ void initTIM5()
 	uint16_t PrescalerValue = 0;
 
 	/* PCLK1 = HCLK/2 HCLK在不是1:1分频时，会自动做2倍频*/
-	RCC_PCLK1Config(RCC_HCLK_Div4);
+	// 2016.09.10 这个时钟不能修改，否则前面初始化的串口波特率都变了
+	// RCC_PCLK1Config(RCC_HCLK_Div4);
 
-	// TIM5，使用1MHz时钟
+	// TIM5，使用2MHz时钟
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
 
 	/*Compute the prescaler value */
-	PrescalerValue = (uint16_t) (SystemCoreClock / 2000000) - 1;
+	PrescalerValue = (uint16_t) (SystemCoreClock / 1000000) - 1;
 	/* Time base configuration */
 	TIM_TimeBaseStructure.TIM_Period = 65535;
 	TIM_TimeBaseStructure.TIM_Prescaler = PrescalerValue;
@@ -204,6 +206,7 @@ BaseType_t GetTemperature(uint8_t id, int16_t* pData)
 	uint8_t		i;
 	uint16_t	temp;
 	int32_t		temperature;
+	uint8_t		crc;
 
 	assert_param(pData);
 
@@ -233,7 +236,12 @@ BaseType_t GetTemperature(uint8_t id, int16_t* pData)
 		s_Scratchpad[i] = DS18B20_ReadByte(id);
 	}
 
-	// todo:CRC校验
+	// CRC校验
+	crc = crc8(s_Scratchpad, 9);
+	if (crc)
+	{
+		return pdFALSE;
+	}
 
 	temp = s_Scratchpad[1] << 8;
 	temp += s_Scratchpad[0];
