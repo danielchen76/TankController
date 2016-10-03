@@ -45,18 +45,18 @@ void InitPowerGPIO()
 #define SWITCH(on, device) 		on ? GPIO_SetBits(device##_GPIO, device##_PIN) : GPIO_ResetBits(device##_GPIO, device##_PIN)
 
 // 24v/12v低压设备开关
-// 主上水泵
+// 主上水泵（有电流监测）
 #define MAINPUMP_GPIO		GPIOG
-#define MAINPUMP_PIN		GPIO_Pin_8
+#define MAINPUMP_PIN		GPIO_Pin_12
 void Switch_MainPump(BaseType_t bOn)
 {
 	SWITCH(bOn, MAINPUMP);
 	LogOutput(LOG_INFO, "Turn %s main pump.", bOn ? "on" : "off");
 }
 
-// 蛋白质分离器
+// 蛋白质分离器（有电流监测）
 #define PROTEINSKIMMER_GPIO		GPIOG
-#define PROTEINSKIMMER_PIN		GPIO_Pin_9
+#define PROTEINSKIMMER_PIN		GPIO_Pin_13
 void Switch_ProteinSkimmer(BaseType_t bOn)
 {
 	SWITCH(bOn, PROTEINSKIMMER);
@@ -65,7 +65,7 @@ void Switch_ProteinSkimmer(BaseType_t bOn)
 
 // 主缸造浪泵
 #define WAVEMAKER_GPIO			GPIOG
-#define WAVEMAKER_PIN			GPIO_Pin_10
+#define WAVEMAKER_PIN			GPIO_Pin_14
 void Switch_WaveMaker(BaseType_t bOn)
 {
 	SWITCH(bOn, WAVEMAKER);
@@ -74,24 +74,27 @@ void Switch_WaveMaker(BaseType_t bOn)
 
 // 主缸造浪泵（夜间模式，备用模式）
 #define WAVEMAKER_NIGHTMODE_GPIO	GPIOG
-#define WAVEMAKER_NIGHTMODE_PIN		GPIO_Pin_11
+#define WAVEMAKER_NIGHTMODE_PIN		GPIO_Pin_15
 void Switch_WaveMakerNightMode(BaseType_t bOn)
 {
 	SWITCH(bOn, WAVEMAKER_NIGHTMODE);
+	// 关闭24V电源（或打开主电源）
+	Switch_WaveMaker(!bOn);
 }
 
-// 底缸造浪泵
+// 底缸造浪泵（无电流监测）
 #define SUB_WAVEMAKER_GPIO		GPIOG
-#define SUB_WAVEMAKER_PIN		GPIO_Pin_12
+#define SUB_WAVEMAKER_PIN		GPIO_Pin_11
 void Switch_SubWaveMaker(BaseType_t bOn)
 {
 	SWITCH(bOn, SUB_WAVEMAKER);
 	LogOutput(LOG_INFO, "Turn %s sub wave maker.", bOn ? "on" : "off");
 }
 
-// RO补水泵（12V）
+// TODO:RO补水和外置补水泵还未确认，可能颠倒（和电磁阀同时开关）
+// RO补水泵
 #define RO_PUMP_GPIO		GPIOG
-#define RO_PUMP_PIN			GPIO_Pin_13
+#define RO_PUMP_PIN			GPIO_Pin_10
 void Switch_RoPump(BaseType_t bOn)
 {
 	SWITCH(bOn, RO_PUMP);
@@ -100,9 +103,9 @@ void Switch_RoPump(BaseType_t bOn)
 	// 同时开启/关闭电磁阀
 }
 
-// RO外置备份补水泵（12V）
+// RO外置备份补水泵
 #define BACKUP_RO_PUMP_GPIO		GPIOG
-#define BACKUP_RO_PUMP_PIN		GPIO_Pin_14
+#define BACKUP_RO_PUMP_PIN		GPIO_Pin_9
 void Switch_BackupRoPump(BaseType_t bOn)
 {
 	SWITCH(bOn, BACKUP_RO_PUMP);
@@ -114,18 +117,26 @@ void Switch_BackupRoPump(BaseType_t bOn)
 
 // 海水排水泵
 #define SEA_PUMP_INOUT_GPIO		GPIOG
-#define SEA_PUMP_INOUT_PIN		GPIO_Pin_15
+#define SEA_PUMP_INOUT_PIN		GPIO_Pin_8
 void Switch_SeaPumpInOut(BaseType_t bOn)
 {
 	SWITCH(bOn, SEA_PUMP_INOUT);
 }
 
-// 24V（开关电源）和 24V（备用电源）切换
+// 打开24V升压电源
 #define BACKUP_POWER_GPIO		GPIOE
-#define BACKUP_POWER_PIN		GPIO_Pin_9
+#define BACKUP_POWER_PIN		GPIO_Pin_14
 void Swtich_BackupPower(BaseType_t bOn)
 {
 	SWITCH(bOn, BACKUP_POWER);
+}
+
+// 24V（开关电源）和 24V（备用电源）切换
+#define TO_BACKUP_POWER_GPIO	GPIOE
+#define TO_BACKUP_POWER_PIN		GPIO_Pin_15
+void Switch_ToBackupPower(BaseType_t bOn)
+{
+	SWITCH(bOn, TO_BACKUP_POWER);
 }
 
 // Beep

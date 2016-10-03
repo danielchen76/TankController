@@ -17,6 +17,7 @@ static Msg		s_MsgArray[TOTAL_MSG_NUMBER];
 //static uint8_t	s_MsgInUsed[TOTAL_MSG_NUMBER];
 static uint8_t	s_MsgNumber = 0;
 
+static StaticSemaphore_t 		xSemaphoreBuffer;
 static SemaphoreHandle_t		s_ArrayMutex;
 
 void InitMsgArray()
@@ -28,7 +29,8 @@ void InitMsgArray()
 	}
 
 	// 初始化互斥量
-	s_ArrayMutex = xSemaphoreCreateBinary();
+	//s_ArrayMutex = xSemaphoreCreateBinary();
+	s_ArrayMutex = xSemaphoreCreateBinaryStatic(&xSemaphoreBuffer);
 
 	// Default is empty state. Need Give once.
 	xSemaphoreGive(s_ArrayMutex);
