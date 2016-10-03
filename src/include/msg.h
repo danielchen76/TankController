@@ -143,6 +143,7 @@ typedef struct
 
 void InitMsgArray();
 Msg* MallocMsg();
+Msg* MallocMsgFromISR();
 void FreeMsg(Msg* pMsg);
 
 #define MSG_SEND(p)		xQueueSendToBack(main_queue, (void*)&p, portMAX_DELAY)

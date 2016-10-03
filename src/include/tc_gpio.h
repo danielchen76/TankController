@@ -26,8 +26,10 @@ void Switch_WaveMakerNightMode(BaseType_t bOn);
 void Switch_SubWaveMaker(BaseType_t bOn);
 void Switch_RoPump(BaseType_t bOn);
 void Switch_BackupRoPump(BaseType_t bOn);
-void Switch_SeaPumpOut(BaseType_t bOn);
-void Switch_SeaPumpIn(BaseType_t bOn);
+void Switch_SeaPumpInOut(BaseType_t bOn);
+
+// Beep
+void Switch_Beep(BaseType_t bOn);
 
 // 220V设备
 void Switch_Chiller(BaseType_t bOn);

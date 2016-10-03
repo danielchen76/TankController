@@ -113,19 +113,11 @@ void Switch_BackupRoPump(BaseType_t bOn)
 }
 
 // 海水排水泵
-#define SEA_PUMP_OUT_GPIO		GPIOG
-#define SEA_PUMP_OUT_PIN		GPIO_Pin_15
-void Switch_SeaPumpOut(BaseType_t bOn)
+#define SEA_PUMP_INOUT_GPIO		GPIOG
+#define SEA_PUMP_INOUT_PIN		GPIO_Pin_15
+void Switch_SeaPumpInOut(BaseType_t bOn)
 {
-	SWITCH(bOn, SEA_PUMP_OUT);
-}
-
-// 海水外部补水泵
-#define SEA_PUMP_IN_GPIO		GPIOE
-#define SEA_PUMP_IN_PIN			GPIO_Pin_8
-void Switch_SeaPumpIn(BaseType_t bOn)
-{
-	SWITCH(bOn, SEA_PUMP_IN);
+	SWITCH(bOn, SEA_PUMP_INOUT);
 }
 
 // 24V（开关电源）和 24V（备用电源）切换
@@ -134,6 +126,14 @@ void Switch_SeaPumpIn(BaseType_t bOn)
 void Swtich_BackupPower(BaseType_t bOn)
 {
 	SWITCH(bOn, BACKUP_POWER);
+}
+
+// Beep
+#define BEEP_GPIO				GPIOE
+#define BEEP_PIN				GPIO_Pin_8
+void Switch_Beep(BaseType_t bOn)
+{
+	SWITCH(bOn, BEEP);
 }
 
 // ========================================================================

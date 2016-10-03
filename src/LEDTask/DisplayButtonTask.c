@@ -77,7 +77,7 @@ void InitLEDButton( void )
     tm1637SetBrightness(3);
 
     // Display the value "1234" and turn on the `:` that is between digits 2 and 3.
-    tm1637DisplayDecimal(0, 0);		// LED full on
+    tm1637DisplayDecimal(1234, 1);		// LED full on
 
     // 初始化USART，用于接收Arduino Micro Pro通过串口发送的按键状态，以及通过串口接收控制部分LED显示
 	/* Enable USART Clock */

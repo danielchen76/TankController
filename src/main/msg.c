@@ -29,6 +29,9 @@ void InitMsgArray()
 
 	// 初始化互斥量
 	s_ArrayMutex = xSemaphoreCreateBinary();
+
+	// Default is empty state. Need Give once.
+	xSemaphoreGive(s_ArrayMutex);
 }
 
 static Msg* GetBlankMsg()
@@ -55,12 +58,12 @@ Msg* MallocMsg()
 	Msg*		pMsg = NULL;
 
 	// Lock
-	//xSemaphoreTake(s_ArrayMutex, portMAX_DELAY);
+	xSemaphoreTake(s_ArrayMutex, portMAX_DELAY);
 
 	pMsg = GetBlankMsg();
 
 	// Unlock
-	//xSemaphoreGive(s_ArrayMutex);
+	xSemaphoreGive(s_ArrayMutex);
 
 	return pMsg;
 }
@@ -72,12 +75,12 @@ Msg* MallocMsgFromISR()
 	static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 	// Lock
-	//xSemaphoreTakeFromISR(s_ArrayMutex, &xHigherPriorityTaskWoken);
+	xSemaphoreTakeFromISR(s_ArrayMutex, &xHigherPriorityTaskWoken);
 
 	pMsg = GetBlankMsg();
 
 	// Unlock
-	//xSemaphoreGiveFromISR(s_ArrayMutex, &xHigherPriorityTaskWoken);
+	xSemaphoreGiveFromISR(s_ArrayMutex, &xHigherPriorityTaskWoken);
 
 	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 
