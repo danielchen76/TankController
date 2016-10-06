@@ -24,5 +24,7 @@ void tm1637Init(void);
 void tm1637SetBrightness(uint8_t brightness);
 void tm1637DisplayDecimal(int v, int displaySeparator);
 
+void tm1637DisplayString(const char* string, BaseType_t displaySeparator);
+
 
 #endif /* INCLUDE_TM1637_H_ */

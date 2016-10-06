@@ -116,26 +116,15 @@ static void MainTask( void * pvParameters)
 	xTaskCreate(TempControlTask, "TempControl", TEMP_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
 	xTaskCreate(WaterLevelControlTask, "WaterLevel", WATERLEVEL_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, NULL);
 
-	// TODO: TEST gpio
-	// 24v/12v低压设备开关
-//	Switch_MainPump(pdTRUE);
-//	Switch_ProteinSkimmer(pdTRUE);
-//	Switch_WaveMaker(pdTRUE);
-//	Switch_WaveMakerNightMode(pdTRUE);
-//	Switch_SubWaveMaker(pdTRUE);
-//	Switch_RoPump(pdTRUE);
-//	Switch_BackupRoPump(pdTRUE);
-//	Switch_SeaPumpOut(pdTRUE);
-//	Switch_SeaPumpIn(pdTRUE);
 
 	// 220V设备
-	Switch_Chiller(pdTRUE);
-	Switch_MainLight(pdTRUE);
-	Switch_SubLight(pdTRUE);
-
-	Switch_T5H0(pdTRUE);
-	Switch_Heater1(pdTRUE);
-	Switch_Heater2(pdTRUE);
+//	Switch_Chiller(pdTRUE);
+//	Switch_MainLight(pdTRUE);
+//	Switch_SubLight(pdTRUE);
+//
+//	Switch_T5H0(pdTRUE);
+//	Switch_Heater1(pdTRUE);
+//	Switch_Heater2(pdTRUE);
 
 
 

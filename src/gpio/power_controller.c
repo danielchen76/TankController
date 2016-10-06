@@ -47,7 +47,7 @@ void InitPowerGPIO()
 // 24v/12v低压设备开关
 // 主上水泵（有电流监测）
 #define MAINPUMP_GPIO		GPIOG
-#define MAINPUMP_PIN		GPIO_Pin_12
+#define MAINPUMP_PIN		GPIO_Pin_11
 void Switch_MainPump(BaseType_t bOn)
 {
 	SWITCH(bOn, MAINPUMP);
@@ -56,7 +56,7 @@ void Switch_MainPump(BaseType_t bOn)
 
 // 蛋白质分离器（有电流监测）
 #define PROTEINSKIMMER_GPIO		GPIOG
-#define PROTEINSKIMMER_PIN		GPIO_Pin_13
+#define PROTEINSKIMMER_PIN		GPIO_Pin_10
 void Switch_ProteinSkimmer(BaseType_t bOn)
 {
 	SWITCH(bOn, PROTEINSKIMMER);
@@ -65,7 +65,7 @@ void Switch_ProteinSkimmer(BaseType_t bOn)
 
 // 主缸造浪泵
 #define WAVEMAKER_GPIO			GPIOG
-#define WAVEMAKER_PIN			GPIO_Pin_14
+#define WAVEMAKER_PIN			GPIO_Pin_9
 void Switch_WaveMaker(BaseType_t bOn)
 {
 	SWITCH(bOn, WAVEMAKER);
@@ -74,7 +74,7 @@ void Switch_WaveMaker(BaseType_t bOn)
 
 // 主缸造浪泵（夜间模式，备用模式）
 #define WAVEMAKER_NIGHTMODE_GPIO	GPIOG
-#define WAVEMAKER_NIGHTMODE_PIN		GPIO_Pin_15
+#define WAVEMAKER_NIGHTMODE_PIN		GPIO_Pin_8
 void Switch_WaveMakerNightMode(BaseType_t bOn)
 {
 	SWITCH(bOn, WAVEMAKER_NIGHTMODE);
@@ -84,7 +84,7 @@ void Switch_WaveMakerNightMode(BaseType_t bOn)
 
 // 底缸造浪泵（无电流监测）
 #define SUB_WAVEMAKER_GPIO		GPIOG
-#define SUB_WAVEMAKER_PIN		GPIO_Pin_11
+#define SUB_WAVEMAKER_PIN		GPIO_Pin_12
 void Switch_SubWaveMaker(BaseType_t bOn)
 {
 	SWITCH(bOn, SUB_WAVEMAKER);
@@ -94,7 +94,7 @@ void Switch_SubWaveMaker(BaseType_t bOn)
 // TODO:RO补水和外置补水泵还未确认，可能颠倒（和电磁阀同时开关）
 // RO补水泵
 #define RO_PUMP_GPIO		GPIOG
-#define RO_PUMP_PIN			GPIO_Pin_10
+#define RO_PUMP_PIN			GPIO_Pin_13
 void Switch_RoPump(BaseType_t bOn)
 {
 	SWITCH(bOn, RO_PUMP);
@@ -105,7 +105,7 @@ void Switch_RoPump(BaseType_t bOn)
 
 // RO外置备份补水泵
 #define BACKUP_RO_PUMP_GPIO		GPIOG
-#define BACKUP_RO_PUMP_PIN		GPIO_Pin_9
+#define BACKUP_RO_PUMP_PIN		GPIO_Pin_14
 void Switch_BackupRoPump(BaseType_t bOn)
 {
 	SWITCH(bOn, BACKUP_RO_PUMP);
@@ -117,7 +117,7 @@ void Switch_BackupRoPump(BaseType_t bOn)
 
 // 海水排水泵
 #define SEA_PUMP_INOUT_GPIO		GPIOG
-#define SEA_PUMP_INOUT_PIN		GPIO_Pin_8
+#define SEA_PUMP_INOUT_PIN		GPIO_Pin_15
 void Switch_SeaPumpInOut(BaseType_t bOn)
 {
 	SWITCH(bOn, SEA_PUMP_INOUT);

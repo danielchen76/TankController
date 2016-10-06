@@ -747,6 +747,50 @@ const CLI_Command_Definition_t cmd_def_wlset =
 	2
 };
 
+static BaseType_t cmd_wlpump( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	const char *	pcParameter;
+	BaseType_t 		xParameterStringLength;
+	BaseType_t		bOn;
+
+	// 分析第二个参数，水位数据，单位mm
+	pcParameter = FreeRTOS_CLIGetParameter(pcCommandString, 2, &xParameterStringLength);
+	configASSERT( pcParameter );
+	bOn = strncasecmp(pcParameter, "on", xParameterStringLength) == 0 ? pdTRUE : pdFALSE;
+
+	// 判断哪个超声波距离传感器
+	pcParameter = FreeRTOS_CLIGetParameter(pcCommandString, 1, &xParameterStringLength);
+	configASSERT( pcParameter );
+	if (strncasecmp(pcParameter, "ro", xParameterStringLength) == 0)
+	{
+		Switch_RoPump(bOn);
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Turn %s RO pump.\r\n", bOn ? "on" : "off");
+	}
+	else if (strncasecmp(pcParameter, "ero", xParameterStringLength) == 0)
+	{
+		Switch_BackupRoPump(bOn);
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Turn %s Backup RO pump.\r\n", bOn ? "on" : "off");
+	}
+	else if (strncasecmp(pcParameter, "sea", xParameterStringLength) == 0)
+	{
+		Switch_SeaPumpInOut(bOn);
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Turn %s Sea in&out pump.\r\n", bOn ? "on" : "off");
+	}
+	else
+	{
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Wrong pump!\r\n");
+	}
+
+	return pdFALSE;
+}
+
+const CLI_Command_Definition_t cmd_def_wlpump =
+{
+	"wlpump",
+	"\r\nwlpump <ro|ero|sea> <on | off>\r\n Turn on/off pump.\r\n",
+	cmd_wlpump, /* The function to run. */
+	2
+};
 
 
 

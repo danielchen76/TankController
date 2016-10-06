@@ -18,6 +18,7 @@
 #include "logTask.h"
 #include "setting.h"
 #include "TimerQueue.h"
+#include "tc_rtc.h"
 
 #include <TM1637.h>
 
@@ -38,6 +39,19 @@ static BaseType_t					s_bError = pdFALSE;
 #define LED_ERROR_ON_TIME			300
 #define LED_ERROR_OFF_TIME			300
 
+// Beep (ms)
+#define BEEP_CHECK_INTERVAL			100					// 100ms检查一次是否需要做蜂鸣告警
+#define BEEP_CLICK					200
+
+#define BEEP_WARN_LENGTH			200
+#define BEEP_WARN_INTERVAL			300000				// 5分钟
+
+#define BEEP_ERROR_LENGTH			1000
+#define BEEP_ERROR_INTERVAL			60000
+
+// LED mode
+static uint8_t						s_LEDMode = LED_MODE_TIME;			//当前数码管的状态（时钟/温度/告警/错误/菜单）
+
 // Arduino Micro Pro按键板的串口
 #define USARTif                   UART4
 #define USARTif_GPIO              GPIOC
@@ -52,6 +66,13 @@ static BaseType_t					s_bError = pdFALSE;
 #define ROTARY_UP
 
 void LEDBlinkCallback(void* pvParameters);
+void RealTimeCheckCallback(void* pvParameters);
+void BeepCallback(void* pvParameters);
+
+// Beep使用的数据，用于记录是什么告警（按位记录），同时有告警和错误时，LED数码管一直显示错误和告警编号（错误优先，多个错误则轮流显示，两秒切换一次）
+static uint32_t				s_Error;
+static uint32_t				s_Warn;
+
 
 
 void InitLEDButton( void )
@@ -119,6 +140,12 @@ void InitLEDButton( void )
 	/* Enable the USART */
 	USART_Cmd(USARTif, ENABLE);
 
+	//Enable the interrupt
+	USART_ITConfig(USARTif, USART_IT_RXNE, ENABLE);
+
+	// 其他参数复位
+	s_Warn = 0;
+	s_Error = 0;
 }
 
 // 定义队列大小（温度控制用）
@@ -209,11 +236,14 @@ static void MsgProcess_entry( void )
 }
 
 // 显示和按键任务使用的定时器
-static struMyTimer			s_LEDButtonTimerArray[5];
+static struMyTimer			s_LEDButtonTimerArray[6];
 static struMyTimerQueue		s_LEDButtonTimerQueue = {s_LEDButtonTimerArray, sizeof(s_LEDButtonTimerArray) / sizeof(s_LEDButtonTimerArray[0])};
 
-//static const TickType_t	c_LEDCheckInterval		= pdMS_TO_TICKS(100);		// 实时时钟，每秒检查一次分钟是否有变化，有变化更新时间显示
-static int16_t	s_BlinkIndex;
+static const TickType_t	c_LEDCheckInterval		= pdMS_TO_TICKS(1000);		// 实时时钟，每秒检查一次分钟是否有变化，有变化更新时间显示
+
+static int16_t	s_BlinkIndex;			// 指示灯闪烁定时器
+static int16_t	s_RealTimeIndex;		// 实时时钟检查
+static int16_t	s_BeepIndex;			// 蜂鸣器定时器（操作指示：响一次，提示：5分钟响一次， 警告：1秒1次？）
 
 static TickType_t			s_NowTick;
 
@@ -228,6 +258,12 @@ void InitDisplayButtonTask( void )
 
 	s_BlinkIndex = AddTimer(&s_LEDButtonTimerQueue, xTaskGetTickCount(), LED_NORMAL_ON_TIME, pdTRUE, LEDBlinkCallback, (void*)pdTRUE);
 	LogOutput(LOG_INFO, "Start internal LED blink timer.");
+
+	s_RealTimeIndex = AddTimer(&s_LEDButtonTimerQueue, xTaskGetTickCount(), c_LEDCheckInterval, pdTRUE, RealTimeCheckCallback, (void*)pdTRUE);
+	LogOutput(LOG_INFO, "Start realtime check timer.");
+
+	s_BeepIndex = AddTimer(&s_LEDButtonTimerQueue, xTaskGetTickCount(), pdMS_TO_TICKS(BEEP_CHECK_INTERVAL), pdTRUE, BeepCallback, (void*)pdTRUE);
+	LogOutput(LOG_INFO, "Start beep timer.");
 }
 
 void DisplayButtonTask( void * pvParameters)
@@ -256,6 +292,26 @@ void SetErrorLED(BaseType_t bError)
 void SetDebugLED(BaseType_t bOn)
 {
 	bOn ? INTERNAL_LED_ON : INTERNAL_LED_OFF;
+}
+
+void SetWarn(uint32_t flag)
+{
+	s_Warn |= flag;
+}
+
+void ClearWarn(uint32_t flag)
+{
+	s_Warn &= ~flag;
+}
+
+void SetError(uint32_t flag)
+{
+	s_Error |= flag;
+}
+
+void ClearError(uint32_t flag)
+{
+	s_Error &= ~flag;
 }
 
 // Blink定时器回调，用于控制板载LED的闪烁频率
@@ -288,6 +344,46 @@ void LEDBlinkCallback(void* pvParameters)
 		INTERNAL_LED_ON;
 		// 修改定时器时间和参数
 		UpdateTimer(&s_LEDButtonTimerQueue, s_BlinkIndex, usON, pdTRUE, (void*)pdTRUE);
+	}
+}
+
+void RealTimeCheckCallback(void* pvParameters)
+{
+	static uint8_t				s_Hour = 0;
+	static uint8_t				s_Minute = 0;
+	static uint8_t				s_bTimeUpdate = 1;
+
+	uint32_t					hour;
+	uint32_t					minute;
+	char						timeString[5];
+
+	// 读取实时时钟，和当前存储比较。分钟变化，就更新显示标记。
+	GetRTC(NULL, NULL, NULL, NULL, &hour, &minute, NULL);
+
+	if ((s_Minute != minute) || (s_Hour != hour))
+	{
+		s_bTimeUpdate = 1;
+		s_Hour = hour;
+		s_Minute = minute;
+	}
+
+	if ((s_bTimeUpdate == 1) && (s_LEDMode == LED_MODE_TIME))
+	{
+		// 更新时间显示
+		snprintf(timeString, 5, "%02d%02d", s_Hour, s_Minute);
+		tm1637DisplayString(timeString, pdTRUE);
+
+		s_bTimeUpdate = 0;
+	}
+}
+
+void BeepCallback(void* pvParameters)
+{
+	static	BaseType_t		bStop = pdTRUE;
+
+	if (bStop)
+	{
+		// check s_Warn & s_Error, then detemind which beep mode
 	}
 }
 

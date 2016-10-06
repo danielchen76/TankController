@@ -81,6 +81,50 @@ void InitRTC(void)
 	RCC_ClearFlag();
 }
 
+void GetRTC(uint32_t* pYear, uint32_t* pMonth, uint32_t* pDate, uint32_t* pWday, uint32_t* pHour, uint32_t* pMinute, uint32_t* pSecond)
+{
+	uint32_t		now_sec;
+	struct tm		now;
+
+	now_sec = RTC_GetCounter();
+	localtime_r((time_t*)&now_sec, &now);
+
+	if (pYear)
+	{
+		*pYear = now.tm_year + 1900;
+	}
+
+	if (pMonth)
+	{
+		*pMonth = now.tm_mon + 1;
+	}
+
+	if (pDate)
+	{
+		*pDate = now.tm_mday;
+	}
+
+	if (pWday)
+	{
+		*pWday = now.tm_wday;
+	}
+
+	if (pHour)
+	{
+		*pHour = now.tm_hour;
+	}
+
+	if (pMinute)
+	{
+		*pMinute = now.tm_min;
+	}
+
+	if (pSecond)
+	{
+		*pSecond = now.tm_sec;
+	}
+}
+
 
 
 // 设置时间，获取时间（没有参数时）

@@ -205,3 +205,89 @@ void TM1637DioLow(void)
 	GPIO_ResetBits(TM1637_DIO_GPIO, TM1637_DIO_Pin);
 }
 
+typedef struct
+{
+	char	 	c;
+	uint8_t		segment;
+} CharSegmentMap;
+
+//
+//      A
+//     ---
+//  F |   | B
+//     -G-
+//  E |   | C
+//     ---
+//      D
+
+// 输入参数中，字母全部小写，但是显示时按预设显示（受数码管约束，不一定是小写）
+const CharSegmentMap	c_charMap[] =
+{
+	{'0', 0b00111111},
+	{'1', 0b00000110},    // 1
+	{'2', 0b01011011},    // 2
+	{'3', 0b01001111},    // 3
+	{'4', 0b01100110},    // 4
+	{'5', 0b01101101},    // 5
+	{'6', 0b01111101},    // 6
+	{'7', 0b00000111},    // 7
+	{'8', 0b01111111},    // 8
+	{'9', 0b01101111},    // 9
+	{'a', 0b01110111},    // A
+	{'b', 0b01111100},    // b
+	{'c', 0b00111001},    // C
+	{'d', 0b01011110},    // d
+	{'e', 0b01111001},    // E
+	{'f', 0b01110001},    // F
+	{' ', 0b00000000},	// 不显示
+};
+
+uint8_t GetSegmemt(char c)
+{
+	for (uint8_t i = 0; i < sizeof(c_charMap) / sizeof(c_charMap[0]); i++)
+	{
+		if (c == c_charMap[i].c)
+		{
+			return c_charMap[i].segment;
+		}
+	}
+
+	return 0b00001100;		//
+}
+
+void tm1637DisplayString(const char* string, BaseType_t displaySeparator)
+{
+	uint8_t digitArr[4] = {0, 0, 0, 0};
+	uint8_t	i = 0;
+	const char*	pChar = string;
+
+	while (pChar)
+	{
+		digitArr[i] = GetSegmemt(*pChar);
+		if (i == 2 && displaySeparator)
+		{
+			digitArr[i] |= 1 << 7;
+		}
+
+		pChar++;
+	}
+
+	TM1637Start();
+	TM1637WriteByte(0x40);
+	TM1637ReadResult();
+	TM1637Stop();
+
+	TM1637Start();
+	TM1637WriteByte(0xc0);
+	TM1637ReadResult();
+
+	for (int i = 0; i < 4; ++i)
+	{
+		TM1637WriteByte(digitArr[3 - i]);
+		TM1637ReadResult();
+	}
+
+	TM1637Stop();
+}
+
+

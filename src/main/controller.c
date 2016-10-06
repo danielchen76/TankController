@@ -2,7 +2,8 @@
  * controller.c
  *
  *	主处理任务，用于处理独立任务无法处理的联动工作（暂时没有看到有什么需要特别联动的），并将状态数据转发给GUI，以及记录到日志中
- *	检查电源状态，根据电源状态，进行主备电源切换，以及切换过程中的水泵、蛋分等的停止和重启，还有设置造浪在使用备用电源时，切换到省电模式
+ *	检查电源状态，根据电源状态，进行主备电源切换，以及切换过程中的水泵、蛋分等的停止和重启（发送消息到对应任务），还有设置造浪在使用备用电源时，切换到省电模式
+ *	控制主缸造浪、底缸造浪泵的启停
  *  Created on: Oct 24, 2015
  *      Author: daniel
  */
@@ -11,6 +12,7 @@
 #include "Msg.h"
 #include "TimerQueue.h"
 #include "StateMachine.h"
+#include "tc_gpio.h"
 
 #include <queue.h>
 #include <task.h>
@@ -23,10 +25,52 @@ const UBaseType_t 	uxMainQueueSize = 20;
 static struMyTimer			s_MainTimerArray[5];
 static struMyTimerQueue		s_MainTimerQueue = {s_MainTimerArray, sizeof(s_MainTimerArray) / sizeof(s_MainTimerArray[0])};
 
+// 造浪泵（主缸、底缸）延迟10秒后启动，避免同时启动，影响电源
+#define WAVEMAKER_DELAY		10000			// 10seconds
+static int16_t				s_WaveMakerDelayIndex = -1;
+
 // 初始化消息队列
 void InitMainMsgQueue( void )
 {
 	main_queue = xQueueCreate(uxMainQueueSize, sizeof(Msg*));
+}
+
+void WaveMakerDelayCallback(void* pvParameters)
+{
+	BaseType_t	bOn = (BaseType_t)pvParameters;
+
+	// Main tank wave pump
+	Switch_WaveMaker(bOn);
+
+	// Sub tank wave pump
+	Switch_SubWaveMaker(bOn);
+
+	s_WaveMakerDelayIndex = -1;
+}
+
+void WaveMaker(BaseType_t bOn, BaseType_t bDelay)
+{
+	// if delay
+	if (bDelay)
+	{
+		// 造浪泵（主缸、底缸）延迟10秒后启动，避免同时启动，影响电源
+		s_WaveMakerDelayIndex = AddTimer(&s_MainTimerQueue, xTaskGetTickCount(), pdMS_TO_TICKS(WAVEMAKER_DELAY), pdFALSE, WaveMakerDelayCallback, (void*)pdTRUE);
+	}
+	else
+	{
+		// Main tank wave pump
+		Switch_WaveMaker(bOn);
+
+		// Sub tank wave pump
+		Switch_SubWaveMaker(bOn);
+
+		if ((!bOn) && (s_WaveMakerDelayIndex >= 0))
+		{
+			// Check delay timer, cancel
+			RemoveTimer(&s_MainTimerQueue, s_WaveMakerDelayIndex);
+			s_WaveMakerDelayIndex = -1;
+		}
+	}
 }
 
 
@@ -71,6 +115,8 @@ void controller_entry(void)
 
 	// 初始化定时器队列
 	InitTimerQueue(&s_MainTimerQueue);
+
+	// 启动一次性定时器，延迟启动造浪泵
 
 	// 循环读取队列，然后处理
 	while(1) {

@@ -69,7 +69,7 @@ static BaseType_t cmd_reboot( char *pcWriteBuffer, size_t xWriteBufferLen, const
 const CLI_Command_Definition_t cmd_def_reboot =
 {
 	"reboot",
-	"\r\nReboot system.\r\n,",
+	"\r\nReboot system.\r\n",
 	cmd_reboot, /* The function to run. */
 	0
 };
@@ -84,6 +84,7 @@ static const CLI_Command_Definition_t* commands[] =
 	&cmd_def_clearErr,
 	&cmd_def_wlstatus,
 	&cmd_def_wlset,
+	&cmd_def_wlpump,
 	&cmd_def_reboot,
 	&cmd_def_gettemp
 };
