@@ -117,6 +117,7 @@ void controller_entry(void)
 	InitTimerQueue(&s_MainTimerQueue);
 
 	// 启动一次性定时器，延迟启动造浪泵
+	WaveMaker(pdTRUE, pdTRUE);
 
 	// 循环读取队列，然后处理
 	while(1) {
