@@ -28,6 +28,69 @@
 QueueHandle_t		waterlevel_queue;
 const UBaseType_t 	uxWaterLevelQueueSize = 10;			// 考虑到会手工控制抽水和补水，所以将消息队列加大
 
+// 当前水位
+#define WL_BUFFER_SIZE			10
+typedef struct
+{
+	uint16_t WaterLevelBuffers[WL_BUFFER_SIZE];		// 每500ms采样一个数据，5秒数据至少5个（暂定1秒一个数据）
+	uint16_t BufferPos;					// 当前Buffer位置
+
+	uint16_t WaterLevel;				// 当前瞬间值
+	uint16_t WaterLevel_N;				// Ns采样的平均值
+
+	// 测试用值，用命令行模拟水位数据来验证（如果测试数据为0，则表示获取实际数据）
+	uint16_t FakeData;
+} struWaterLevelData;
+
+typedef struct
+{
+	uint16_t	usHeight;				// 高度是由超声波探头到缸底的高度（并不一定是实际的高度，和超声波探头安装位置有关）
+	uint16_t	usLength;
+	uint16_t	usWidth;
+} struTankSize;
+
+
+#define SUB_TANK			SUB_US_PORT
+#define RO_TANK				RO_US_PORT
+#define MAIN_TANK			MAIN_US_PORT
+
+#define ULTRASOUND_NUM		3
+
+static struWaterLevelData			s_WaterLevel[ULTRASOUND_NUM];			// 主缸/底缸/RO缸
+static BaseType_t					s_HasBackupRO = pdFALSE;				// 备用RO水箱是否有水
+
+// 缸的尺寸（静态，不可变）
+const struTankSize					c_TankSize[ULTRASOUND_NUM] =
+{
+		{RO_TANK_HEIGHT, RO_TANK_LENGTH, RO_TANK_WIDTH},
+		{SUB_TANK_HEIGHT, SUB_TANK_LENGTH, SUB_TANK_WIDTH},
+		{MAIN_TANK_HEIGHT, MAIN_TANK_LENGTH, MAIN_TANK_WIDTH},
+};
+
+static TickType_t			s_NowTick;
+
+static const TickType_t	c_DataInterval		= pdMS_TO_TICKS(1000);		// 水位数据每1秒采集一次（后续再看看是否提升到500ms）
+static const uint8_t		c_NSeconds			= 7;						// N秒平均值是多少秒 （需要考虑最大值和最小值会被删除）
+
+static struMyTimer			s_WLTimerArray[5];
+static struMyTimerQueue		s_WLTimerQueue = {s_WLTimerArray, sizeof(s_WLTimerArray) / sizeof(s_WLTimerArray[0])};
+
+// 蛋分延迟启动定时器
+static int16_t				s_ProteinSkimmerTimer = -1;
+// 电源切换延迟启动定时器
+static int16_t				s_PowerChangeTimer	= -1;
+// RO备用水红外线探头上报保护定时器，如果定时器超时，表示ControlPad没有及时上报状态，立刻切换为无水状态
+static int16_t				s_BackupROTimer		= -1;
+
+// 备用RO水补水定时检查（避免陷入备用RO水补水状态，而无法返回正常的补水检测）
+static int16_t				s_BackupRORefillTimer = -1;
+#define BACKUPROREFILL_TIMER_TIMEOUT			(30 * 1000)					// 至少每隔30秒提升10mm水位。如果低于这个标准，就退回正常状态
+#define BACKUPROREFILL_MIN_HEIGHT				10
+static uint16_t				s_usLastROWL = 0;								// 上次定时检查的水位
+
+// 临时补水量（临时目标水位）
+
+
 // 函数定义
 void ProcessWaterLevel(void* pvParameters);
 
@@ -43,6 +106,7 @@ void* WL_ROBackupRefillState();
 void RefillROWaterTimer(void* pvParameters);
 void RefillBackupROWaterTimer(void* pvParameters);
 void ProteinSkimmerOnTimer(void* pvParameters);
+void BackupROTimer(void* pvParameters);
 
 
 void InitWaterLevelMsgQueue( void )
@@ -97,13 +161,52 @@ void MsgPauseSystem(Msg* msg)
 	// 底缸造浪泵在水位控制范围，主缸暂时不需要联动控制，只要提供遥控器/本机菜单控制即可
 }
 
+void MsgStopAllPump(Msg* msg)
+{
+}
+
+void MsgExRoWater(Msg* msg)
+{
+	s_HasBackupRO =pdTRUE;
+
+	if (s_BackupROTimer == -1)
+	{
+		// 创建有水上报超时定时器（默认3秒）
+		s_BackupROTimer = AddTimer(&s_WLTimerQueue, xTaskGetTickCount(), pdMS_TO_TICKS(3000), pdFALSE, BackupROTimer, NULL);
+		if (s_BackupROTimer == -1)
+		{
+			s_HasBackupRO = pdFALSE;
+		}
+	}
+	else
+	{
+		// 有水状态定时上报，复位超时定时器
+		ResetTimer(&s_WLTimerQueue, s_BackupROTimer);
+	}
+}
+
+void MsgExRoWaterEmpty(Msg* msg)
+{
+	s_HasBackupRO = pdFALSE;
+
+	// 清除定时器
+	if (s_BackupROTimer != -1)
+	{
+		RemoveTimer(&s_WLTimerQueue, s_BackupROTimer);
+		s_BackupROTimer = -1;
+	}
+}
+
 static struEntry	Entries[] =
 {
 	{MSG_RO_WATER_PUMP,		MsgRoPumpSwitch},
 	{MSG_RO_BACKUP_PUMP,	MsgRoBackupPumpSwitch},
 	{MSG_AC_POWER,			MsgACPowerChange},
 	{MSG_BACKUP_POWER,		MsgBackupPowerChange},
-	{MSG_PAUSE_SYS,			MsgPauseSystem}
+	{MSG_PAUSE_SYS,			MsgPauseSystem},
+	{MSG_STOP_ALL_PUMP,		MsgStopAllPump},
+	{MSG_EX_RO_WATER,		MsgExRoWater},
+	{MSG_EX_RO_WATER_EMPTY, MsgExRoWaterEmpty}
 };
 
 static void MsgProcess_entry(void)
@@ -131,66 +234,6 @@ static void MsgProcess_entry(void)
 	}
 }
 
-// 当前水位
-#define WL_BUFFER_SIZE			10
-typedef struct
-{
-	uint16_t WaterLevelBuffers[WL_BUFFER_SIZE];		// 每500ms采样一个数据，5秒数据至少5个（暂定1秒一个数据）
-	uint16_t BufferPos;					// 当前Buffer位置
-
-	uint16_t WaterLevel;				// 当前瞬间值
-	uint16_t WaterLevel_N;				// Ns采样的平均值
-
-	// 测试用值，用命令行模拟水位数据来验证（如果测试数据为0，则表示获取实际数据）
-	uint16_t FakeData;
-} struWaterLevelData;
-
-typedef struct
-{
-	uint16_t	usHeight;				// 高度是由超声波探头到缸底的高度（并不一定是实际的高度，和超声波探头安装位置有关）
-	uint16_t	usLength;
-	uint16_t	usWidth;
-} struTankSize;
-
-
-#define SUB_TANK			SUB_US_PORT
-#define RO_TANK				RO_US_PORT
-#define MAIN_TANK			MAIN_US_PORT
-
-#define ULTRASOUND_NUM		3
-
-static struWaterLevelData			s_WaterLevel[ULTRASOUND_NUM];			// 主缸/底缸/RO缸
-static BaseType_t					s_HasBackupRO = pdFALSE;				// 备用RO水箱是否有水
-
-// 缸的尺寸（静态，不可变）
-const struTankSize					c_TankSize[ULTRASOUND_NUM] =
-{
-		{RO_TANK_HEIGHT, RO_TANK_LENGTH, RO_TANK_WIDTH},
-		{SUB_TANK_HEIGHT, SUB_TANK_LENGTH, SUB_TANK_WIDTH},
-		{MAIN_TANK_HEIGHT, MAIN_TANK_LENGTH, MAIN_TANK_WIDTH},
-};
-
-static TickType_t			s_NowTick;
-
-static const TickType_t	c_DataInterval		= pdMS_TO_TICKS(1000);		// 水位数据每1秒采集一次（后续再看看是否提升到500ms）
-static const uint8_t		c_NSeconds			= 7;						// N秒平均值是多少秒 （需要考虑最大值和最小值会被删除）
-
-static struMyTimer			s_WLTimerArray[5];
-static struMyTimerQueue		s_WLTimerQueue = {s_WLTimerArray, sizeof(s_WLTimerArray) / sizeof(s_WLTimerArray[0])};
-
-// 蛋分延迟启动定时器
-static int16_t				s_ProteinSkimmerTimer = -1;
-
-// 电源切换延迟启动定时器
-static int16_t				s_PowerChangeTimer	= -1;
-
-// 备用RO水补水定时检查（避免陷入备用RO水补水状态，而无法返回正常的补水检测）
-static int16_t				s_BackupRORefillTimer = -1;
-#define BACKUPROREFILL_TIMER_TIMEOUT			(30 * 1000)					// 至少每隔30秒提升10mm水位。如果低于这个标准，就退回正常状态
-#define BACKUPROREFILL_MIN_HEIGHT				10
-static uint16_t				s_usLastROWL = 0;								// 上次定时检查的水位
-
-// 临时补水量（临时目标水位）
 
 void InitWaterLevelControlTask()
 {
@@ -382,7 +425,8 @@ void ProcessWaterLevel(void* pvParameters)
 	}
 
 	// 检查备用RO水箱的水位状态（红外线检测，开关量）
-	s_HasBackupRO = BackupROHasWater();
+	// TODO:从ControlPad的串口输出
+	//s_HasBackupRO = BackupROHasWater();
 
 	// 状态机执行
 	StateMachineRun(&s_WLStateMachine);
@@ -624,6 +668,13 @@ void ProteinSkimmerOnTimer(void* pvParameters)
 	(void)pvParameters;
 
 	StateMachineSwitch(&s_WLStateMachine, WL_NormalState);
+}
+
+// 备用RO水有水状态定时上报超时，需要更新为无水
+void BackupROTimer(void* pvParameters)
+{
+	s_HasBackupRO = pdFALSE;
+	s_BackupROTimer = -1;
 }
 
 

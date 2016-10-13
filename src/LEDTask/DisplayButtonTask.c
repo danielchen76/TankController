@@ -60,10 +60,16 @@ static uint8_t						s_LEDMode = LED_MODE_TIME;			//当前数码管的状态（�
 #define USARTif_RxPin             GPIO_Pin_11
 #define USARTif_TxPin             GPIO_Pin_10
 
-#define ROTARY_FWD					0x01
+#define ROTARY_ROLL_MASK			0x20
+#define ROTARY_FWD					0x00
 #define ROTARY_REV					0x02
-#define ROTARY_DOWN					0x04
-#define ROTARY_UP
+
+#define ROTARY_CLICK_MASK			0x10
+#define ROTARY_SHORT_CLICK			0x00
+#define ROTARY_LONG_CLICK			0X01
+
+#define WATER_EMPTY_MASK			0x80
+#define WATER_EMPTY_FALSE			0x08
 
 void LEDBlinkCallback(void* pvParameters);
 void RealTimeCheckCallback(void* pvParameters);
@@ -98,7 +104,7 @@ void InitLEDButton( void )
     tm1637SetBrightness(3);
 
     // Display the value "1234" and turn on the `:` that is between digits 2 and 3.
-    tm1637DisplayDecimal(1234, 0);		// LED full on
+    tm1637DisplayString("8888", 1);		// LED full on
 
     // 初始化USART，用于接收Arduino Micro Pro通过串口发送的按键状态，以及通过串口接收控制部分LED显示
 	/* Enable USART Clock */
@@ -175,20 +181,44 @@ void MsgButtonRev( Msg* msg )
 {
 }
 
+void MsgButtonClick( Msg* msg )
+{
+}
+
+void MsgButtonLongClick( Msg* msg )
+{
+}
+
 static struEntry	Entries[] =
 {
 	{MSG_BUTTON_DOWN,		MsgButtonDown},
 	{MSG_BUTTON_UP,			MsgButtonUp},
 	{MSG_BUTTON_FWD,		MsgButtonFwd},
 	{MSG_BUTTON_REV,		MsgButtonFwd},
+	{MSG_BUTTON_CLICK,		MsgButtonClick},
+	{MSG_BUTTON_LONG_CLICK,	MsgButtonLongClick}
 };
+
+void SendControlPadMsg(enumMsg msgId, portBASE_TYPE* pWoken)
+{
+	Msg*		msg;
+
+	msg = MallocMsgFromISR();
+	if (msg)		// 消息分配不到，忽略此次按键通知
+	{
+		msg->Id = msgId;
+		xQueueSendFromISR(LEDButton_queue, &msg, pWoken);
+	}
+}
+
+// 分析ControlPad中的字节
+
 
 // 串口中断，用于接收Arduino Micro Pro通过串口发送的按键状态（旋转编码器）
 void UART4_IRQHandler( void )
 {
 	uint8_t		data;
 	uint16_t 	sr = USARTif->SR;
-	Msg*		msg;
 
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 
@@ -196,14 +226,41 @@ void UART4_IRQHandler( void )
 	{
 		data = USART_ReceiveData(USARTif);
 
-		// TODO:data要进行switch分析，可能会出现多个消息（需要注意处理）
-
-		// 将数据解析为按键消息，发送到LEDTask队列
-		msg = MallocMsgFromISR();
-		if (msg)		// 消息分配不到，忽略此次按键通知
+		// data要进行分析，可能会出现多个消息（需要注意处理）
+		if (data & WATER_EMPTY_MASK)
 		{
-			msg->Id = MSG_BUTTON_FWD;
-			xQueueSendFromISR(LEDButton_queue, &msg, &xHigherPriorityTaskWoken);
+			if (data & WATER_EMPTY_FALSE)
+			{
+				SendControlPadMsg(MSG_EX_RO_WATER, &xHigherPriorityTaskWoken);
+			}
+			else
+			{
+				SendControlPadMsg(MSG_EX_RO_WATER_EMPTY, &xHigherPriorityTaskWoken);
+			}
+		}
+
+		if (data & ROTARY_ROLL_MASK)
+		{
+			if (data & ROTARY_REV)
+			{
+				SendControlPadMsg(MSG_BUTTON_REV, &xHigherPriorityTaskWoken);
+			}
+			else
+			{
+				SendControlPadMsg(MSG_BUTTON_FWD, &xHigherPriorityTaskWoken);
+			}
+		}
+
+		if (data & ROTARY_CLICK_MASK)
+		{
+			if (data & ROTARY_LONG_CLICK)
+			{
+				SendControlPadMsg(MSG_BUTTON_LONG_CLICK, &xHigherPriorityTaskWoken);
+			}
+			else
+			{
+				SendControlPadMsg(MSG_BUTTON_CLICK, &xHigherPriorityTaskWoken);
+			}
 		}
 
 		portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );

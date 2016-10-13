@@ -183,6 +183,7 @@ void TM1637DelayUsec(uint16_t i)
 			__asm__ __volatile__("nop\n\t":::"memory");
 		}
 	}
+//	vTaskDelay(1);
 }
 
 void TM1637ClkHigh(void)
@@ -261,15 +262,15 @@ void tm1637DisplayString(const char* string, BaseType_t displaySeparator)
 	uint8_t	i = 0;
 	const char*	pChar = string;
 
-	while (pChar)
+	while (pChar && (*pChar != '\0'))
 	{
 		digitArr[i] = GetSegmemt(*pChar);
-		if (i == 2 && displaySeparator)
+		if (i == 1 && displaySeparator)
 		{
 			digitArr[i] |= 1 << 7;
 		}
-
-		pChar++;
+		++i;
+		++pChar;
 	}
 
 	TM1637Start();
@@ -283,7 +284,7 @@ void tm1637DisplayString(const char* string, BaseType_t displaySeparator)
 
 	for (int i = 0; i < 4; ++i)
 	{
-		TM1637WriteByte(digitArr[3 - i]);
+		TM1637WriteByte(digitArr[i]);
 		TM1637ReadResult();
 	}
 

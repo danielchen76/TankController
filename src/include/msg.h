@@ -33,6 +33,7 @@ typedef enum
 	MSG_RO_BACKUP_PUMP,			// 向RO水缸补水泵
 	MSG_WATER_OUT_PUMP,			// 换水抽水泵
 	MSG_WATER_IN_PUMP,			// 加注海水泵
+	MSG_STOP_ALL_PUMP,			// 停止所有的水泵
 
 	MSG_HEATER,					// 加热棒（在消息中控制一根还是两个工作）
 	MSG_CHILLER,				// 冷水机电源
@@ -53,6 +54,11 @@ typedef enum
 	MSG_BUTTON_UP,				// 按键松开
 	MSG_BUTTON_FWD,				// 旋钮向前转
 	MSG_BUTTON_REV,				// 旋钮向后转
+	MSG_BUTTON_CLICK,
+	MSG_BUTTON_LONG_CLICK,
+
+	MSG_EX_RO_WATER,			// 有RO备用水
+	MSG_EX_RO_WATER_EMPTY,		// RO备用水空
 
 	MSG_ALARM_ERROR,			// 告警音（错误，连续）
 	MSG_ALARM_WARN,				// 告警音（提示，间歇，短暂提示）
@@ -157,6 +163,7 @@ extern QueueHandle_t		gui_queue;
 extern QueueHandle_t		main_queue;
 extern QueueHandle_t		waterlevel_queue;
 extern QueueHandle_t		temp_queue;
+extern QueueHandle_t		LEDButton_queue;
 
 //extern QueueHandle_t		sensor_queue;
 
