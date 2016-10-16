@@ -13,9 +13,12 @@
 #include "TimerQueue.h"
 #include "StateMachine.h"
 #include "tc_gpio.h"
+#include "tc_rtc.h"
 
 #include <queue.h>
 #include <task.h>
+#include <string.h>
+#include <stdlib.h>
 
 // 定义队列大小
 QueueHandle_t		main_queue;
@@ -76,24 +79,28 @@ void WaveMaker(BaseType_t bOn, BaseType_t bDelay)
 
 // 消息处理函数（多个）
 
-void MsgTemp(Msg* msg)
+static void MsgTemp(Msg* msg)
 {
 
 }
 
-void MsgMainWaterLevel(Msg* msg)
+static void MsgMainWaterLevel(Msg* msg)
 {
 
 }
 
-void MsgSubWaterLevel(Msg* msg)
+static void MsgSubWaterLevel(Msg* msg)
 {
 
 }
 
-void MsgRoWaterLevel(Msg* msg)
+static void MsgRoWaterLevel(Msg* msg)
 {
 
+}
+
+static void MsgStopAllPump(Msg* msg)
+{
 }
 
 
@@ -104,6 +111,7 @@ static struEntry	Entries[] =
 	{MSG_MAIN_WATER_LEVEL,		MsgMainWaterLevel},
 	{MSG_SUB_WATER_LEVEL,		MsgSubWaterLevel},
 	{MSG_RO_WATER_LEVEL,		MsgRoWaterLevel},
+	{MSG_STOP_ALL_PUMP, 		MsgStopAllPump},
 };
 
 // 主处理循环，使用主线程（不需要独立开启一个线程）
@@ -145,3 +153,132 @@ void controller_entry(void)
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// -------------------------------------Command line-------------------------------------
+static BaseType_t cmd_sys( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	const char *	pcParameter;
+	BaseType_t 		xParameterStringLength;
+
+	// 分析第一个参数
+	pcParameter = FreeRTOS_CLIGetParameter(pcCommandString, 1, &xParameterStringLength);
+	configASSERT( pcParameter );
+	if (strncasecmp(pcParameter, "stop", xParameterStringLength) == 0)
+	{
+		// 停机命令
+
+		snprintf(pcWriteBuffer, xWriteBufferLen, "System stop.\r\n");
+	}
+	else if (strncasecmp(pcParameter, "start", xParameterStringLength) == 0)
+	{
+		// 启动命令
+
+		snprintf(pcWriteBuffer, xWriteBufferLen, "System start.\r\n");
+	}
+	else if (strncasecmp(pcParameter, "pause5", xParameterStringLength) == 0)
+	{
+		// 暂停5分钟
+
+		snprintf(pcWriteBuffer, xWriteBufferLen, "System pause 5 minutes.\r\n");
+	}
+	else if (strncasecmp(pcParameter, "pause10", xParameterStringLength) == 0)
+	{
+		// 暂停10分钟
+
+		snprintf(pcWriteBuffer, xWriteBufferLen, "System pause 10 minutes.\r\n");
+	}
+	else
+	{
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Wrong system command!\r\n");
+	}
+
+	return pdFALSE;
+}
+
+const CLI_Command_Definition_t cmd_def_sys =
+{
+	"sys",
+	"\r\nsys <stop|pause5|pause10|start>\r\n System control command.\r\n",
+	cmd_sys, /* The function to run. */
+	1
+};
+
+static BaseType_t cmd_backuppower( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	const char *	pcParameter;
+	BaseType_t 		xParameterStringLength;
+
+	// 分析第一个参数
+	pcParameter = FreeRTOS_CLIGetParameter(pcCommandString, 1, &xParameterStringLength);
+	configASSERT( pcParameter );
+	if (strncasecmp(pcParameter, "on", xParameterStringLength) == 0)
+	{
+		// 切换到备用电源
+		Swtich_BackupPower(POWER_ON);
+		Switch_ToBackupPower(POWER_ON);
+
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Backup power switch on.\r\n");
+	}
+	else if (strncasecmp(pcParameter, "off", xParameterStringLength) == 0)
+	{
+		// 关闭备用电源
+		Swtich_BackupPower(POWER_OFF);
+		Switch_ToBackupPower(POWER_OFF);
+
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Backup power switch off.\r\n");
+	}
+	else
+	{
+		snprintf(pcWriteBuffer, xWriteBufferLen, "Wrong backuppower command!\r\n");
+	}
+
+	return pdFALSE;
+}
+
+const CLI_Command_Definition_t cmd_def_backuppower =
+{
+	"backuppower",
+	"\r\nbackuppower <on|off>\r\n Switch on/off backup power.\r\n",
+	cmd_backuppower, /* The function to run. */
+	1
+};
+
+static BaseType_t cmd_uptime( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	(void)pcCommandString;
+	uint32_t		uptime, day, hour, minute, second;
+
+	uptime = GetUptime(&day, &hour, &minute, &second);
+
+	// 输出当前运行时间长度
+	snprintf(pcWriteBuffer, xWriteBufferLen, "System uptime:%lu Day %lu Hour %lu Minute %lu Second\r\n", day, hour, minute, second);
+
+	return pdFALSE;
+}
+
+const CLI_Command_Definition_t cmd_def_uptime =
+{
+	"uptime",
+	"\r\nuptime\r\n Show system uptime.\r\n",
+	cmd_uptime, /* The function to run. */
+	0
+};

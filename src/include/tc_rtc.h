@@ -14,6 +14,8 @@
 
 void InitRTC(void);
 void GetRTC(uint32_t* pYear, uint32_t* pMonth, uint32_t* pDate, uint32_t* pWday, uint32_t* pHour, uint32_t* pMinute, uint32_t* pSecond);
+uint32_t GetUptime(uint32_t* day, uint32_t* hour, uint32_t* minute, uint32_t* second);
+void UpdateUptime();
 
 extern const CLI_Command_Definition_t cmd_def_time;
 

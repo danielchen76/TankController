@@ -70,21 +70,17 @@ Msg* MallocMsg()
 	return pMsg;
 }
 
-Msg* MallocMsgFromISR()
+Msg* MallocMsgFromISR(portBASE_TYPE* pWoken)
 {
 	Msg*		pMsg = NULL;
 
-	static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
 	// Lock
-	xSemaphoreTakeFromISR(s_ArrayMutex, &xHigherPriorityTaskWoken);
+	xSemaphoreTakeFromISR(s_ArrayMutex, pWoken);
 
 	pMsg = GetBlankMsg();
 
 	// Unlock
-	xSemaphoreGiveFromISR(s_ArrayMutex, &xHigherPriorityTaskWoken);
-
-	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
+	xSemaphoreGiveFromISR(s_ArrayMutex, pWoken);
 
 	return pMsg;
 }
@@ -104,4 +100,16 @@ void FreeMsg(Msg* pMsg)
 	xSemaphoreGive(s_ArrayMutex);
 }
 
+void FreeMsgFromISR(Msg* pMsg, portBASE_TYPE* pWoken)
+{
+	assert_param(pMsg);
+	// Lock
+	xSemaphoreTakeFromISR(s_ArrayMutex, pWoken);
+
+	pMsg->Id = MSG_UNUSED;
+	s_MsgNumber--;
+
+	// Unlock
+	xSemaphoreGiveFromISR(s_ArrayMutex, pWoken);
+}
 

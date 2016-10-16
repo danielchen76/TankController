@@ -20,6 +20,7 @@
 #include "tc_rtc.h"
 #include "logTask.h"
 #include "LEDTask.h"
+#include "controller.h"
 
 #define mainUART_COMMAND_CONSOLE_STACK_SIZE		( 500 )
 #define mainUART_COMMAND_CONSOLE_TASK_PRIORITY  	1
@@ -86,7 +87,10 @@ static const CLI_Command_Definition_t* commands[] =
 	&cmd_def_wlset,
 	&cmd_def_wlpump,
 	&cmd_def_reboot,
-	&cmd_def_gettemp
+	&cmd_def_gettemp,
+	&cmd_def_sys,
+	&cmd_def_backuppower,
+	&cmd_def_uptime,
 };
 
 void vRegisterCLICommands( void )

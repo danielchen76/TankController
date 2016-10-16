@@ -47,7 +47,7 @@ void InitTempMsgQueue( void )
 	temperature_queue = xQueueCreate(uxTempQueueSize, sizeof(Msg*));
 }
 
-void MsgHeaterCtrl( Msg* msg )
+static void MsgHeaterCtrl( Msg* msg )
 {
 	// Msg_Switch，加热棒还是用扩展参数做独立控制
 	switch (msg->Param.Switch.param)
@@ -66,18 +66,18 @@ void MsgHeaterCtrl( Msg* msg )
 	}
 }
 
-void MsgChillerCtrl( Msg* msg )
+static void MsgChillerCtrl( Msg* msg )
 {
 	// Msg_Switch
 }
 
-void MsgHeaterMode( Msg* msg)
+static void MsgHeaterMode( Msg* msg)
 {
 	// Msg_DeviceEnable
 	s_bHeaterAuto = (uint8_t)msg->Param.Mode.bAuto;
 }
 
-void MsgChillerMode( Msg* msg)
+static void MsgChillerMode( Msg* msg)
 {
 	// Msg_DeviceEnable
 	s_bChillerAuto = (uint8_t)msg->Param.Mode.bAuto;

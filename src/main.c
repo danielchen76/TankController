@@ -88,6 +88,8 @@ static void MainTask( void * pvParameters)
 
 	// 初始化Shell
 	InitShell();
+	EnableBluetooth(pdFALSE);		// 发现有时候蓝牙模块上电不能正常启动，需要做一次复位
+	vTaskDelay(1000 / portTICK_RATE_MS);
 	EnableBluetooth(pdTRUE);		// TODO: 需要最后再确定是否默认开启蓝牙模块，还是通过手动方式开启。
 
 	// 初始化所有GPIO口
@@ -101,7 +103,7 @@ static void MainTask( void * pvParameters)
 	InitADC();
 
 	// TODO:TEST
-	GetDCVoltage();
+	//GetDCVoltage();
 
 	// 初始化温度探头
 	InitDS18B20();

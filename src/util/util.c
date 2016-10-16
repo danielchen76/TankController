@@ -9,7 +9,7 @@
 
 BaseType_t IsTimeout(TickType_t tickNow, TickType_t tickLast, TickType_t tickTimeout)
 {
-	if (tickNow > tickLast)
+	if (tickNow >= tickLast)
 	{
 		return (tickNow - tickLast) >= tickTimeout;
 	}

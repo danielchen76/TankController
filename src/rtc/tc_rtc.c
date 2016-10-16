@@ -125,8 +125,92 @@ void GetRTC(uint32_t* pYear, uint32_t* pMonth, uint32_t* pDate, uint32_t* pWday,
 	}
 }
 
+// 记录系统启动后运行时间（单位：秒）
+static uint32_t		s_Uptime = 0;
+
+uint32_t GetUptime(uint32_t* day, uint32_t* hour, uint32_t* minute, uint32_t* second)
+{
+	uint32_t	LeftTime = s_Uptime;
+
+	if (second)
+	{
+		*second = LeftTime % 60;
+	}
+
+	// 转换为分钟
+	LeftTime = LeftTime / 60;
+
+	if (minute)
+	{
+		*minute = LeftTime % 60;
+	}
+
+	// 转换为小时
+	LeftTime = LeftTime / 60;
+
+	if (hour)
+	{
+		*hour = LeftTime % 24;
+	}
+
+	// 转换为天
+	LeftTime = LeftTime / 24;
+
+	if (day)
+	{
+		*day = LeftTime;
+	}
+
+	return s_Uptime;
+}
+
+// 利用xTaskGetTickCount累加计数
+void UpdateUptime()
+{
+	static TickType_t		tLastTick = 0;
+
+	TickType_t				tNow;
+	TickType_t				tDelta;
+
+	// 获取当前的，然后和前一次比较
+	tNow = xTaskGetTickCount();
+
+	if ((tLastTick == 0) && (s_Uptime == 0))
+	{
+		tLastTick = tNow;
+	}
+	else
+	{
+		if (tNow >= tLastTick)
+		{
+			tDelta = tNow - tLastTick;
+		}
+		else
+		{
+			tDelta = portMAX_DELAY - tLastTick + tNow;
+		}
+
+		if (tDelta >= 1000)
+		{
+			// 将偏差的秒数加入到Uptime，然后更新tLastTick
+			s_Uptime += tDelta / 1000;
+			tLastTick = tNow;
+		}
+	}
+}
 
 
+
+
+
+
+
+
+
+
+
+
+// -------------------------Command line----------------------------------
 // 设置时间，获取时间（没有参数时）
 static BaseType_t cmd_time( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
 

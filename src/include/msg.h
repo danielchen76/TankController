@@ -31,8 +31,7 @@ typedef enum
 	MSG_RO_WATER_PUMP,			// RO补水泵
 	MSG_MAIN_PUMP,				// 主循环水泵
 	MSG_RO_BACKUP_PUMP,			// 向RO水缸补水泵
-	MSG_WATER_OUT_PUMP,			// 换水抽水泵
-	MSG_WATER_IN_PUMP,			// 加注海水泵
+	MSG_SEA_INOUT_PUMP,			// 换水/加注抽水泵
 	MSG_STOP_ALL_PUMP,			// 停止所有的水泵
 
 	MSG_HEATER,					// 加热棒（在消息中控制一根还是两个工作）
@@ -46,6 +45,8 @@ typedef enum
 
 	// 组合控制消息
 	MSG_PAUSE_SYS,				// 系统暂停（主要控制所有泵停机一段时间，加热棒和冷水机则不需要暂停）
+	MSG_START_SYS,
+	MSG_STOP_SYS,				// 根据需要停止系统（组合，停止水泵，也停止加热棒。冷水机可以考虑是否不停止。默认冷水机不停）
 
 	// 其他控制消息
 
@@ -151,15 +152,21 @@ void InitMsgArray();
 Msg* MallocMsg();
 Msg* MallocMsgFromISR();
 void FreeMsg(Msg* pMsg);
+void FreeMsgFromISR(Msg* pMsg, portBASE_TYPE* pWoken);
 
-#define MSG_SEND(p)		xQueueSendToBack(main_queue, (void*)&p, portMAX_DELAY)
-#define MSG_SEND_I(p)	xQueueSendToBackFromISR(main_queue, (void*)&p, pdFALSE)
+#define MSG_SEND(p)					xQueueSendToBack(main_queue, (void*)&p, portMAX_DELAY)
+#define MSG_SEND_I(p, woken)		xQueueSendToBackFromISR(main_queue, (void*)&p, woken)
 
-#define GUI_MSG_SEND(p)		xQueueSendToBack(gui_queue, (void*)&p, portMAX_DELAY)
-#define GUI_MSG_SEND_I(p)	xQueueSendToBackFromISR(gui_queue, (void*)&p, pdFALSE)
+#define LED_MSG_SEND(p)				xQueueSendToBack(LEDButton_queue, (void*)&p, portMAX_DELAY)
+#define LED_MSG_SEND_I(p, woken)	xQueueSendToBackFromISR(LEDButton_queue, (void*)&p, woken)
+
+#define WL_MSG_SEND(p)				xQueueSendToBack(waterlevel_queue, (void*)&p, portMAX_DELAY)
+#define WL_MSG_SEND_I(p, woken)		xQueueSendToBackFromISR(waterlevel_queue, (void*)&p, woken)
+
+#define TEMP_MSG_SEND(p)			xQueueSendToBack(temp_queue, (void*)&p, portMAX_DELAY)
+#define TEMP_MSG_SEND_I(p, woken)	xQueueSendToBackFromISR(temp_queue, (void*)&p, woken)
 
 // 每个queue外部定义
-extern QueueHandle_t		gui_queue;
 extern QueueHandle_t		main_queue;
 extern QueueHandle_t		waterlevel_queue;
 extern QueueHandle_t		temp_queue;

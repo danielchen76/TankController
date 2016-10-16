@@ -74,6 +74,7 @@ static uint8_t						s_LEDMode = LED_MODE_TIME;			//当前数码管的状态（�
 void LEDBlinkCallback(void* pvParameters);
 void RealTimeCheckCallback(void* pvParameters);
 void BeepCallback(void* pvParameters);
+void UARTDealyCallback(void* pvParameters);
 
 // Beep使用的数据，用于记录是什么告警（按位记录），同时有告警和错误时，LED数码管一直显示错误和告警编号（错误优先，多个错误则轮流显示，两秒切换一次）
 static uint32_t				s_Error;
@@ -146,9 +147,6 @@ void InitLEDButton( void )
 	/* Enable the USART */
 	USART_Cmd(USARTif, ENABLE);
 
-	//Enable the interrupt
-	USART_ITConfig(USARTif, USART_IT_RXNE, ENABLE);
-
 	// 其他参数复位
 	s_Warn = 0;
 	s_Error = 0;
@@ -164,28 +162,28 @@ void InitLEDButtonMsgQueue( void )
 	LEDButton_queue = xQueueCreate(uxLEDButtonQueueSize, sizeof(Msg*));
 }
 
-void MsgButtonDown( Msg* msg)
+static void MsgButtonDown( Msg* msg)
 {
 }
 
-void MsgButtonUp( Msg* msg )
+static void MsgButtonUp( Msg* msg )
 {
 	// 判断按下的时间长度，执行不同的操作
 }
 
-void MsgButtonFwd( Msg* msg )
+static void MsgButtonFwd( Msg* msg )
 {
 }
 
-void MsgButtonRev( Msg* msg )
+static void MsgButtonRev( Msg* msg )
 {
 }
 
-void MsgButtonClick( Msg* msg )
+static void MsgButtonClick( Msg* msg )
 {
 }
 
-void MsgButtonLongClick( Msg* msg )
+static void MsgButtonLongClick( Msg* msg )
 {
 }
 
@@ -194,24 +192,40 @@ static struEntry	Entries[] =
 	{MSG_BUTTON_DOWN,		MsgButtonDown},
 	{MSG_BUTTON_UP,			MsgButtonUp},
 	{MSG_BUTTON_FWD,		MsgButtonFwd},
-	{MSG_BUTTON_REV,		MsgButtonFwd},
+	{MSG_BUTTON_REV,		MsgButtonRev},
 	{MSG_BUTTON_CLICK,		MsgButtonClick},
 	{MSG_BUTTON_LONG_CLICK,	MsgButtonLongClick}
 };
 
 void SendControlPadMsg(enumMsg msgId, portBASE_TYPE* pWoken)
 {
-	Msg*		msg;
+	Msg*		pMsg;
 
-	msg = MallocMsgFromISR();
-	if (msg)		// 消息分配不到，忽略此次按键通知
+	pMsg = MallocMsgFromISR(pWoken);
+	if (pMsg)		// 消息分配不到，忽略此次按键通知
 	{
-		msg->Id = msgId;
-		xQueueSendFromISR(LEDButton_queue, &msg, pWoken);
+		pMsg->Id = msgId;
+		if (LED_MSG_SEND_I(pMsg, pWoken) != pdPASS)
+		{
+			FreeMsgFromISR(pMsg, pWoken);
+		}
 	}
 }
 
-// 分析ControlPad中的字节
+void SendControlPadMsgToWL(enumMsg msgId, portBASE_TYPE* pWoken)
+{
+	Msg*		pMsg;
+
+	pMsg = MallocMsgFromISR(pWoken);
+	if (pMsg)		// 消息分配不到，忽略此次按键通知
+	{
+		pMsg->Id = msgId;
+		if (WL_MSG_SEND_I(pMsg, pWoken) != pdPASS)
+		{
+			FreeMsgFromISR(pMsg, pWoken);
+		}
+	}
+}
 
 
 // 串口中断，用于接收Arduino Micro Pro通过串口发送的按键状态（旋转编码器）
@@ -231,11 +245,11 @@ void UART4_IRQHandler( void )
 		{
 			if (data & WATER_EMPTY_FALSE)
 			{
-				SendControlPadMsg(MSG_EX_RO_WATER, &xHigherPriorityTaskWoken);
+				SendControlPadMsgToWL(MSG_EX_RO_WATER, &xHigherPriorityTaskWoken);
 			}
 			else
 			{
-				SendControlPadMsg(MSG_EX_RO_WATER_EMPTY, &xHigherPriorityTaskWoken);
+				SendControlPadMsgToWL(MSG_EX_RO_WATER_EMPTY, &xHigherPriorityTaskWoken);
 			}
 		}
 
@@ -321,6 +335,9 @@ void InitDisplayButtonTask( void )
 
 	s_BeepIndex = AddTimer(&s_LEDButtonTimerQueue, xTaskGetTickCount(), pdMS_TO_TICKS(BEEP_CHECK_INTERVAL), pdTRUE, BeepCallback, (void*)pdTRUE);
 	LogOutput(LOG_INFO, "Start beep timer.");
+
+	// 延迟启动串口中断，避免过早接收到请求，导致消息发送失败。
+	AddTimer(&s_LEDButtonTimerQueue, xTaskGetTickCount(), pdMS_TO_TICKS(5000), pdFALSE, UARTDealyCallback, (void*)pdTRUE);
 }
 
 void DisplayButtonTask( void * pvParameters)
@@ -414,6 +431,9 @@ void RealTimeCheckCallback(void* pvParameters)
 	uint32_t					minute;
 	char						timeString[5];
 
+	// 定时更新uptime计数器
+	UpdateUptime();
+
 	// 读取实时时钟，和当前存储比较。分钟变化，就更新显示标记。
 	GetRTC(NULL, NULL, NULL, NULL, &hour, &minute, NULL);
 
@@ -443,6 +463,14 @@ void BeepCallback(void* pvParameters)
 		// check s_Warn & s_Error, then detemind which beep mode
 	}
 }
+
+void UARTDealyCallback(void* pvParameters)
+{
+	(void)pvParameters;
+	//Enable the interrupt
+	USART_ITConfig(USARTif, USART_IT_RXNE, ENABLE);
+}
+
 
 // -------------------------------Command line--------------------------------------------
 // 手动清除内部LED的告警状态

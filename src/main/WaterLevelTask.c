@@ -58,6 +58,9 @@ typedef struct
 
 static struWaterLevelData			s_WaterLevel[ULTRASOUND_NUM];			// 主缸/底缸/RO缸
 static BaseType_t					s_HasBackupRO = pdFALSE;				// 备用RO水箱是否有水
+static BaseType_t					s_BackupROAutoRefill = pdTRUE;			// 备用RO水是否自动补水（自动含义：无论RO水缸是否低于指定自动补水，只要探头探测有备用水
+																			// 都自动启动，直到RO水缸满。此时自动RO补水关闭。后续就只等到RO水缸低于指定范围才会自动补水
+																			// 或者，备用RO水缸再次变为无水状态，就复位为自动RO补水）
 
 // 缸的尺寸（静态，不可变）
 const struTankSize					c_TankSize[ULTRASOUND_NUM] =
@@ -72,19 +75,20 @@ static TickType_t			s_NowTick;
 static const TickType_t	c_DataInterval		= pdMS_TO_TICKS(1000);		// 水位数据每1秒采集一次（后续再看看是否提升到500ms）
 static const uint8_t		c_NSeconds			= 7;						// N秒平均值是多少秒 （需要考虑最大值和最小值会被删除）
 
-static struMyTimer			s_WLTimerArray[5];
+static struMyTimer			s_WLTimerArray[8];
 static struMyTimerQueue		s_WLTimerQueue = {s_WLTimerArray, sizeof(s_WLTimerArray) / sizeof(s_WLTimerArray[0])};
 
 // 蛋分延迟启动定时器
 static int16_t				s_ProteinSkimmerTimer = -1;
 // 电源切换延迟启动定时器
 static int16_t				s_PowerChangeTimer	= -1;
+
 // RO备用水红外线探头上报保护定时器，如果定时器超时，表示ControlPad没有及时上报状态，立刻切换为无水状态
 static int16_t				s_BackupROTimer		= -1;
 
 // 备用RO水补水定时检查（避免陷入备用RO水补水状态，而无法返回正常的补水检测）
 static int16_t				s_BackupRORefillTimer = -1;
-#define BACKUPROREFILL_TIMER_TIMEOUT			(30 * 1000)					// 至少每隔30秒提升10mm水位。如果低于这个标准，就退回正常状态
+#define BACKUPROREFILL_TIMER_TIMEOUT			(60 * 1000)					// 至少每隔30秒提升10mm水位。如果低于这个标准，就退回正常状态
 #define BACKUPROREFILL_MIN_HEIGHT				10
 static uint16_t				s_usLastROWL = 0;								// 上次定时检查的水位
 
@@ -114,17 +118,17 @@ void InitWaterLevelMsgQueue( void )
 	waterlevel_queue = xQueueCreate(uxWaterLevelQueueSize, sizeof(Msg*));
 }
 
-void MsgRoPumpSwitch(Msg* msg)
+static void MsgRoPumpSwitch(Msg* msg)
 {
 	Switch_RoPump(msg->Param.Switch.bOn);
 }
 
-void MsgRoBackupPumpSwitch(Msg* msg)
+static void MsgRoBackupPumpSwitch(Msg* msg)
 {
 	Switch_BackupRoPump(msg->Param.Switch.bOn);
 }
 
-void MsgACPowerChange(Msg* msg)
+static void MsgACPowerChange(Msg* msg)
 {
 	if (msg->Param.Power.bOk)
 	{
@@ -137,7 +141,7 @@ void MsgACPowerChange(Msg* msg)
 	}
 }
 
-void MsgBackupPowerChange(Msg* msg)
+static void MsgBackupPowerChange(Msg* msg)
 {
 	if (msg->Param.Power.bOk)
 	{
@@ -149,7 +153,7 @@ void MsgBackupPowerChange(Msg* msg)
 	}
 }
 
-void MsgPauseSystem(Msg* msg)
+static void MsgPauseSystem(Msg* msg)
 {
 	if (msg->Param.Pause.seconds > 0)
 	{
@@ -161,12 +165,13 @@ void MsgPauseSystem(Msg* msg)
 	// 底缸造浪泵在水位控制范围，主缸暂时不需要联动控制，只要提供遥控器/本机菜单控制即可
 }
 
-void MsgStopAllPump(Msg* msg)
+static void MsgStopAllPump(Msg* msg)
 {
 }
 
-void MsgExRoWater(Msg* msg)
+static void MsgExRoWater(Msg* msg)
 {
+	(void)msg;			// unused
 	s_HasBackupRO =pdTRUE;
 
 	if (s_BackupROTimer == -1)
@@ -185,9 +190,13 @@ void MsgExRoWater(Msg* msg)
 	}
 }
 
-void MsgExRoWaterEmpty(Msg* msg)
+static void MsgExRoWaterEmpty(Msg* msg)
 {
+	(void)msg;			// unused
 	s_HasBackupRO = pdFALSE;
+
+	// 恢复到自动补充状态
+	s_BackupROAutoRefill = pdTRUE;
 
 	// 清除定时器
 	if (s_BackupROTimer != -1)
@@ -473,12 +482,24 @@ void* WL_NormalState()
 		return WL_RORefillState;
 	}
 
-	// 检查RO缸水位，检测是否需要从备用RO桶补RO水（备用RO桶还要判断是否有水，有水才能切换状态）
-	if ((s_WaterLevel[RO_TANK].WaterLevel_N < Get_usRoTankWaterLevel_Refill())
-			&& (s_HasBackupRO))
+	if (s_BackupROAutoRefill)
 	{
-		LogOutput(LOG_INFO, "Begin to refill RO tank.");
-		return WL_ROBackupRefillState;
+		// 自动补充备用RO，只要RO缸低于最大值，同时RO备用水红外线探头有水
+		if ((s_HasBackupRO) && (s_WaterLevel[RO_TANK].WaterLevel_N < Get_usRoTankWaterLevel_Max()))
+		{
+			LogOutput(LOG_INFO, "Begin to refill RO tank automatically, because backup RO has water.");
+			return WL_ROBackupRefillState;
+		}
+	}
+	else
+	{
+		// 检查RO缸水位，检测是否需要从备用RO桶补RO水（备用RO桶还要判断是否有水，有水才能切换状态）
+		if ((s_WaterLevel[RO_TANK].WaterLevel_N < Get_usRoTankWaterLevel_Refill())
+				&& (s_HasBackupRO))
+		{
+			LogOutput(LOG_INFO, "Begin to refill RO tank, because RO tank is low.");
+			return WL_ROBackupRefillState;
+		}
 	}
 
 	// 没有变化，保持当前状态
@@ -489,10 +510,11 @@ void* WL_NormalState()
 void* WL_RORefillState()
 {
 	// 检查底缸水位 和 RO水缸水位（底缸需要使用即时水位检查，避免延迟）
-	if ((s_WaterLevel[SUB_TANK].WaterLevel >= Get_usSubTankWaterLevelRef())
-			|| (s_WaterLevel[RO_TANK].WaterLevel <= Get_usRoTankWaterLevel_Min()))
+	// 2016.10.16 改用水位平均值，因为加水的速度很慢，平均值可靠。（即时水位反而变化太大，可能受到干扰）
+	if ((s_WaterLevel[SUB_TANK].WaterLevel_N >= Get_usSubTankWaterLevelRef())
+			|| (s_WaterLevel[RO_TANK].WaterLevel_N <= Get_usRoTankWaterLevel_Min()))
 	{
-		LogOutput(LOG_INFO, "Sub tank:%dmm, RO tank:%dmm", s_WaterLevel[SUB_TANK].WaterLevel, s_WaterLevel[RO_TANK].WaterLevel);
+		LogOutput(LOG_INFO, "Sub tank:%dmm, RO tank:%dmm", s_WaterLevel[SUB_TANK].WaterLevel_N, s_WaterLevel[RO_TANK].WaterLevel_N);
 		LogOutput(LOG_INFO, "Finish refill RO water to sub tank.");
 		return WL_NormalState;
 	}
@@ -504,12 +526,13 @@ void* WL_RORefillState()
 void* WL_ROBackupRefillState()
 {
 	// 检查备用RO缸水位状态（红外线探测，开关量） 和 RO水缸水位
-	if ((s_WaterLevel[RO_TANK].WaterLevel >= Get_usRoTankWaterLevel_Max())
+	// 2016.10.16 改用水位平均值，因为加水的速度很慢，平均值可靠。（即时水位反而变化太大，可能受到干扰）
+	if ((s_WaterLevel[RO_TANK].WaterLevel_N >= Get_usRoTankWaterLevel_Max())
 			|| (!s_HasBackupRO))
 	{
-		LogOutput(LOG_INFO, "RO tank:%dmm, backup RO:%s", s_WaterLevel[RO_TANK].WaterLevel, s_HasBackupRO ? "Yes" : "No");
+		LogOutput(LOG_INFO, "RO tank:%dmm, backup RO:%s", s_WaterLevel[RO_TANK].WaterLevel_N, s_HasBackupRO ? "Yes" : "No");
 		LogOutput(LOG_INFO, "Finish refill RO tank");
-		return WL_ROBackupRefillState;
+		return WL_NormalState;
 	}
 
 	return NULL;
@@ -582,6 +605,9 @@ void WL_Normal_RoBackupRefill_Change(StateMachineFunc pOld)
 	}
 	s_BackupRORefillTimer = AddTimer(&s_WLTimerQueue, xTaskGetTickCount(), BACKUPROREFILL_TIMER_TIMEOUT, pdTRUE, RefillBackupROWaterTimer, NULL);
 
+	// 进入RO备用水补充状态，自动补充关闭，后续只能根据RO缸的水位低于指定值才会自动启动。或者，RO备用水探头检测到离水后再入水。
+	s_BackupROAutoRefill = pdFALSE;
+
 	LogOutput(LOG_INFO, "Normal mode switch to backup RO refill mode.");
 }
 
@@ -623,8 +649,7 @@ void WL_All_Stop_Change(StateMachineFunc pOld)
 	// 关闭所有补水水泵
 	Switch_RoPump(POWER_OFF);
 	Switch_BackupRoPump(POWER_OFF);
-	Switch_SeaPumpOut(POWER_OFF);
-	Switch_SeaPumpIn(POWER_OFF);
+	Switch_SeaPumpInOut(POWER_OFF);
 
 	LogOutput(LOG_INFO, "Stop mode.");
 }
@@ -683,6 +708,8 @@ const struStateChangeEntry		c_WLStateMachineChangeEntries[] =
 {
 		{WL_StopState, WL_Init1State, WL_Stop_Init1_Change},
 		{WL_Init1State, WL_NormalState, WL_Init1_Normal_Change},
+		{WL_NormalState, WL_ROBackupRefillState, WL_Normal_RoBackupRefill_Change},
+		{WL_ROBackupRefillState, WL_NormalState, WL_BackupRefill_Normal_Change},
 };
 
 static struStateMachine			s_WLStateMachine =
