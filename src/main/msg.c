@@ -88,7 +88,7 @@ Msg* MallocMsgFromISR(portBASE_TYPE* pWoken)
 // 将使用后的Msg退回数组中，并标记为空闲状态
 void FreeMsg(Msg* pMsg)
 {
-	assert_param(pMsg);
+	configASSERT(pMsg);
 
 	// Lock
 	xSemaphoreTake(s_ArrayMutex, portMAX_DELAY);
@@ -102,7 +102,7 @@ void FreeMsg(Msg* pMsg)
 
 void FreeMsgFromISR(Msg* pMsg, portBASE_TYPE* pWoken)
 {
-	assert_param(pMsg);
+	configASSERT(pMsg);
 	// Lock
 	xSemaphoreTakeFromISR(s_ArrayMutex, pWoken);
 

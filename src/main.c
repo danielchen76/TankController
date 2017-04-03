@@ -102,9 +102,6 @@ static void MainTask( void * pvParameters)
 	// 初始化ADC（电压监控和切换在Main主任务中执行）
 	InitADC();
 
-	// TODO:TEST
-	//GetDCVoltage();
-
 	// 初始化温度探头
 	InitDS18B20();
 

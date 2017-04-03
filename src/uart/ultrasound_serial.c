@@ -21,19 +21,19 @@
 
 // CD4052的A、B引脚
 // Pin A
-//#define CD4052_A_GPIO           	GPIOE
-//#define CD4052_A_GPIO_CLK       	RCC_APB2Periph_GPIOE
-//#define CD4052_A_Pin            	GPIO_Pin_0
-//
-//// Pin B
-//#define CD4052_B_GPIO           	GPIOE
-//#define CD4052_B_GPIO_CLK       	RCC_APB2Periph_GPIOE
-//#define CD4052_B_Pin            	GPIO_Pin_1
+#define CD4052_A_GPIO           	GPIOE
+#define CD4052_A_GPIO_CLK       	RCC_APB2Periph_GPIOE
+#define CD4052_A_Pin            	GPIO_Pin_0
+
+// Pin B
+#define CD4052_B_GPIO           	GPIOE
+#define CD4052_B_GPIO_CLK       	RCC_APB2Periph_GPIOE
+#define CD4052_B_Pin            	GPIO_Pin_1
 
 static uint8_t s_Buffer[2];			// 缓存两个字节的距离数据
 static uint8_t s_BufferPos;
 
-const uint8_t	c_PortAddr[] = {0xE8, 0xEA};
+const uint8_t	c_PortAddr[] = {0xEA, 0xE8};
 
 // 初始化超声波传感器使用的UART，和需要进行多路分配使用的GPIO口
 void InitUltraSoundSensors(void)
@@ -61,17 +61,17 @@ void InitUltraSoundSensors(void)
 	GPIO_Init(USARTwl_GPIO, &GPIO_InitStructure);
 
 	// 初始化模拟开关CD4052的控制引脚
-//	RCC_APB2PeriphClockCmd(CD4052_A_GPIO_CLK | CD4052_B_GPIO_CLK, ENABLE);
-//
-//	GPIO_InitStructure.GPIO_Pin = CD4052_A_Pin;
-//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-//	GPIO_Init(CD4052_A_GPIO, &GPIO_InitStructure);
-//
-//	GPIO_InitStructure.GPIO_Pin = CD4052_B_Pin;
-//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-//	GPIO_Init(CD4052_B_GPIO, &GPIO_InitStructure);
+	RCC_APB2PeriphClockCmd(CD4052_A_GPIO_CLK | CD4052_B_GPIO_CLK, ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = CD4052_A_Pin;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(CD4052_A_GPIO, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin = CD4052_B_Pin;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(CD4052_B_GPIO, &GPIO_InitStructure);
 
 	// 初始化串口2，用于超声波距离测量
 	USART_InitStructure.USART_BaudRate = 9600;
@@ -108,14 +108,26 @@ void SendByte(uint8_t data)
 
 BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 {
-	assert_param(pData);
+	BitAction pinA, pinB;
+
+	configASSERT(pData);
 
 	// 判断Port合法性
-	if (Port > 3)
+	if (Port >= 2)
 	{
-		assert_param(pdFALSE);
+		configASSERT(pdFALSE);
 		return pdFALSE;
 	}
+
+	// 切换CD4052
+	pinA = (Port & 0x01) ? Bit_SET : Bit_RESET;
+	pinB = (Port & 0x02) ? Bit_SET : Bit_RESET;
+	pinA = Bit_RESET;
+	pinB = Bit_RESET;
+	GPIO_WriteBit(CD4052_A_GPIO, CD4052_A_Pin, pinA);
+	GPIO_WriteBit(CD4052_B_GPIO, CD4052_B_Pin, pinB);
+
+	//vTaskDelay(10 / portTICK_RATE_MS);
 
 	if (USART_GetFlagStatus(USARTwl, USART_FLAG_RXNE) != RESET)
 	{
@@ -154,6 +166,11 @@ BaseType_t GetDistance(uint8_t Port, uint16_t* pData)
 
 	// 超时
 	USART_ITConfig(USARTwl, USART_IT_RXNE, DISABLE);
+
+	pinA = Bit_RESET;
+	pinB = Bit_RESET;
+	GPIO_WriteBit(CD4052_A_GPIO, CD4052_A_Pin, pinA);
+	GPIO_WriteBit(CD4052_B_GPIO, CD4052_B_Pin, pinB);
 
 	return pdFALSE;
 }

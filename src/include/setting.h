@@ -26,6 +26,7 @@ typedef struct
 	// 配置是指实际超声波探头测量的水位（实际水位，是经过换算后的），单位全部都是“毫米”
 	uint16_t		usSubTankWaterLevelRef;	// 自动计算，由WaterLevel task进行更新（shell也要做到那里来做强制指定）
 	uint16_t		usRORefillOffset;		// 当水位低于参考值多少时才启动补水
+	uint16_t		usRORefillEnable;		// 是否启动自动补水
 
 	uint16_t		usChangeWater;			// （单位：ml）最大换水量（通过主缸/底缸的水位降低总和来计算，以停机后几分钟作为参考）
 
@@ -59,6 +60,7 @@ DEFINE_SETTING_SET_GET(usTemperatureOffset)
 // 配置是指实际超声波探头测量的水位（实际水位，是经过换算后的），单位全部都是“毫米”
 DEFINE_SETTING_SET_GET(usSubTankWaterLevelRef)
 DEFINE_SETTING_SET_GET(usRORefillOffset)
+DEFINE_SETTING_SET_GET(usRORefillEnable)
 
 DEFINE_SETTING_SET_GET(usChangeWater)
 

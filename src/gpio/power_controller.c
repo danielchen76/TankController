@@ -126,7 +126,7 @@ void Switch_SeaPumpInOut(BaseType_t bOn)
 // 打开24V升压电源
 #define BACKUP_POWER_GPIO		GPIOE
 #define BACKUP_POWER_PIN		GPIO_Pin_14
-void Swtich_BackupPower(BaseType_t bOn)
+void Switch_BackupPower(BaseType_t bOn)
 {
 	SWITCH(bOn, BACKUP_POWER);
 }

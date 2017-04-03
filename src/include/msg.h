@@ -40,6 +40,7 @@ typedef enum
 	MSG_CHILLER_MODE,			// 冷水机工作模式（自动还是手动）
 
 	// 电源状态变更消息
+	MSG_ADC_FINISHED,			// ADC采样完成
 	MSG_AC_POWER,				// 交流电源状态
 	MSG_BACKUP_POWER,			// 备用电源状态
 
@@ -66,6 +67,15 @@ typedef enum
 
 
 } enumMsg;
+
+// 供电状态
+typedef enum
+{
+	POWER_AC,					// 220v供电
+	POWER_BATTERY,				// 后备电池供电
+	POWER_TOBACKUP,				// 切换到备用电池的中间状态
+	POWER_ACRESUME,				// 切换会220v供电中间态（没有什么动作，只是检测到220v恢复后，等待一段时间才恢复）
+} enumPowerMode;
 
 typedef union
 {

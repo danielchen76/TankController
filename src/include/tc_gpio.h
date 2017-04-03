@@ -28,6 +28,9 @@ void Switch_RoPump(BaseType_t bOn);
 void Switch_BackupRoPump(BaseType_t bOn);
 void Switch_SeaPumpInOut(BaseType_t bOn);
 
+void Switch_BackupPower(BaseType_t bOn);
+void Switch_ToBackupPower(BaseType_t bOn);
+
 // Beep
 void Switch_Beep(BaseType_t bOn);
 

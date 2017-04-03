@@ -208,7 +208,7 @@ BaseType_t GetTemperature(uint8_t id, int16_t* pData)
 	int32_t		temperature;
 	uint8_t		crc;
 
-	assert_param(pData);
+	configASSERT(pData);
 
 	if ( !(DS18B20_Reset(id)) )
 	{

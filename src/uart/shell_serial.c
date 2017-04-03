@@ -86,6 +86,7 @@ static const CLI_Command_Definition_t* commands[] =
 	&cmd_def_wlstatus,
 	&cmd_def_wlset,
 	&cmd_def_wlpump,
+	&cmd_def_wlsubref,
 	&cmd_def_reboot,
 	&cmd_def_gettemp,
 	&cmd_def_sys,

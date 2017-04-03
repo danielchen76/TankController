@@ -20,7 +20,7 @@ spiffs fs;
 
 static s32_t fs_spiffs_read(u32_t addr, u32_t size, u8_t *dst)
 {
-	assert_param(size <= 256);
+	configASSERT(size <= 256);
 
 	sFLASH_ReadBuffer(dst, addr, (u16_t)size);
 
@@ -36,7 +36,7 @@ static s32_t fs_spiffs_write(u32_t addr, u32_t size, u8_t *src)
 
 static s32_t fs_spiffs_erase(u32_t addr, u32_t size)
 {
-	assert_param(size == 4 * 1024);
+	configASSERT(size == 4 * 1024);
 
 	// earse sector
 	sFLASH_Erase4KSector(addr);

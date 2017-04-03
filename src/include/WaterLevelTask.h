@@ -19,6 +19,7 @@ void WaterLevelControlTask( void * pvParameters);
 extern const CLI_Command_Definition_t cmd_def_wlstatus;
 extern const CLI_Command_Definition_t cmd_def_wlset;
 extern const CLI_Command_Definition_t cmd_def_wlpump;
+extern const CLI_Command_Definition_t cmd_def_wlsubref;
 
 
 #endif /* INCLUDE_WATERLEVELTASK_H_ */

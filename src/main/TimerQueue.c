@@ -15,7 +15,7 @@
 // 任务内定时器队列，只能单任务使用。每隔任务需要初始化自己使用的定时器队列
 void InitTimerQueue(struMyTimerQueue* pTimerQueue)
 {
-	assert_param(pTimerQueue->size > 0);
+	configASSERT(pTimerQueue->size > 0);
 
 	// 全部清零
 	memset(pTimerQueue->pQueue, 0, sizeof(struMyTimer) * pTimerQueue->size);
@@ -47,7 +47,7 @@ int16_t AddTimer(struMyTimerQueue* pTimerQueue, TickType_t tickNow, TickType_t t
 
 void RemoveTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex)
 {
-	assert_param(timerIndex < pTimerQueue->size);
+	configASSERT(timerIndex < pTimerQueue->size);
 
 	// 清除回调函数（其他的参数在add时都会重新赋值）
 	pTimerQueue->pQueue[timerIndex].pFunc = NULL;
@@ -56,7 +56,7 @@ void RemoveTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex)
 void UpdateTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex, TickType_t timeout, BaseType_t bReload, void* pvParameters)
 {
 	struMyTimer*	pTimer;
-	assert_param(timerIndex < pTimerQueue->size);
+	configASSERT(timerIndex < pTimerQueue->size);
 
 	pTimer = pTimerQueue->pQueue + timerIndex;
 	if (pTimer->pFunc)
@@ -71,7 +71,7 @@ void UpdateTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex, TickType_t t
 // 更新定时器，定时器重新计时（用于菜单超时等）
 void ResetTimer(struMyTimerQueue* pTimerQueue, int16_t timerIndex)
 {
-	assert_param(timerIndex < pTimerQueue->size);
+	configASSERT(timerIndex < pTimerQueue->size);
 
 	pTimerQueue->pQueue[timerIndex].tLastTick = xTaskGetTickCount();
 }

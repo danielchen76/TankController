@@ -148,7 +148,7 @@ LogMsg* MallocLogMsg()
 
 void FreeLogMsg(LogMsg* pMsg)
 {
-	assert_param(pMsg);
+	configASSERT(pMsg);
 
 	xSemaphoreTake(s_LogMutex, portMAX_DELAY);
 

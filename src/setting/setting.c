@@ -53,6 +53,7 @@ void DefaultSettings()
 
 	s_Setting.usSubTankWaterLevelRef= 0;				// 默认参考水位为0，没有设置（首次运行）
 	s_Setting.usRORefillOffset		= 10;				// 低于参考值10mm后，才开始补水
+	s_Setting.usRORefillEnable		= 1;				// 默认启动自动补水（手动修改后，需要记录到EEPROM）
 
 	s_Setting.usChangeWater			= 30 * 1000;		// 每次最多更换30升海水
 
@@ -284,6 +285,7 @@ SETTING_SET_GET(usTemperatureOffset)
 // 配置是指实际超声波探头测量的水位（实际水位，是经过换算后的），单位全部都是“毫米”
 SETTING_SET_GET(usSubTankWaterLevelRef)
 SETTING_SET_GET(usRORefillOffset)
+SETTING_SET_GET(usRORefillEnable)
 
 SETTING_SET_GET(usChangeWater)
 
