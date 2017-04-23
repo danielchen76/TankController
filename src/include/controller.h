@@ -17,5 +17,6 @@ void controller_entry(void);
 extern const CLI_Command_Definition_t cmd_def_sys;
 extern const CLI_Command_Definition_t cmd_def_backuppower;
 extern const CLI_Command_Definition_t cmd_def_uptime;
+extern const CLI_Command_Definition_t cmd_def_power;
 
 #endif /* INCLUDE_CONTROLLER_H_ */

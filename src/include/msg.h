@@ -74,7 +74,7 @@ typedef enum
 	POWER_AC,					// 220v供电
 	POWER_BATTERY,				// 后备电池供电
 	POWER_TOBACKUP,				// 切换到备用电池的中间状态
-	POWER_ACRESUME,				// 切换会220v供电中间态（没有什么动作，只是检测到220v恢复后，等待一段时间才恢复）
+	POWER_AC_RESUME,			// 切换会220v供电中间态（没有什么动作，只是检测到220v恢复后，等待一段时间才恢复）
 } enumPowerMode;
 
 typedef union

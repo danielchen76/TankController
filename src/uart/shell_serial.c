@@ -92,6 +92,7 @@ static const CLI_Command_Definition_t* commands[] =
 	&cmd_def_sys,
 	&cmd_def_backuppower,
 	&cmd_def_uptime,
+	&cmd_def_power,
 };
 
 void vRegisterCLICommands( void )

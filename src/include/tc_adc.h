@@ -12,12 +12,12 @@
 
 void InitADC();
 
-int16_t GetDCVoltage();
-int16_t GetBackupDCVoltage();
+void StartGetVoltage();
 
-int16_t GetMainPowerCurrent();
-int16_t GetMainPumpCurrent();
-int16_t GetProteinSkimmerCurrent();
-
+void transformADCValue(uint16_t* pDCVoltage,
+					   uint16_t* pBatteryVoltage,
+					   uint16_t* pMainCurrent,
+					   uint16_t* pProteinSkimmerCurrent,
+					   uint16_t* pMainPumpCurrent);
 
 #endif /* INCLUDE_TC_ADC_H_ */

@@ -14,6 +14,7 @@
 #include "StateMachine.h"
 #include "tc_gpio.h"
 #include "tc_rtc.h"
+#include "tc_adc.h"
 
 #include <queue.h>
 #include <task.h>
@@ -40,6 +41,13 @@ static int16_t				s_PowerCheckIndex = -1;
 static int16_t				s_PowerResumeIndex = -1;
 
 static enumPowerMode		s_PowerMode		= POWER_AC;
+
+static uint16_t				s_ACVoltage = 0;
+static uint16_t				s_BatteryVoltage = 0;
+
+static uint16_t				s_MainCurrent = 0;
+static uint16_t				s_ProteinSkimmerCurrent = 0;
+static uint16_t				s_MainPumpCurrent = 0;
 
 
 //define function
@@ -93,7 +101,13 @@ void PowerCheckCallback(void* pvParameters)
 {
 	(void)pvParameters;
 	// 启动ADC中断读取方式，同时读取多个通道数据
-	// 然后在ADC中断中，进行数据获取后，通知main task消息，进行异步换算和执行相关的通知动作
+	// 然后在ADC中断中，进行数据获取后，通知main task消息，执行更新全局变量，提供当前Callback判断
+	// 根据当前的电源状态，检查AC和Battery电源电压
+
+	StartGetVoltage();
+
+	// TODO 暂时在Callback中判断电源状态，后续再优化为中断中触发判断过程
+	//
 }
 
 // 切换电源模式
@@ -113,7 +127,7 @@ void SwitchPowerMode(enumPowerMode toMode)
 
 		// 发送消息，启动水位任务中的所有泵
 
-		// 延迟启动蛋分
+		// 延迟启动造浪
 		WaveMaker(pdTRUE, pdTRUE);
 		break;
 
@@ -130,17 +144,17 @@ void SwitchPowerMode(enumPowerMode toMode)
 		// 启动备用电池状态，延迟
 		if (s_PowerResumeIndex != -1)
 		{
-			// 前取消
+			// 取消之前的恢复延迟定时器
 			RemoveTimer(&s_MainTimerQueue, s_PowerResumeIndex);
 			s_PowerResumeIndex = -1;
 		}
 		s_PowerResumeIndex = AddTimer(&s_MainTimerQueue, xTaskGetTickCount(), pdMS_TO_TICKS(POWER_RESUME_DELAY), pdFALSE, PowerResumeCallback, (void*)pdTRUE);
 		break;
 
-	case POWER_ACRESUME:
+	case POWER_AC_RESUME:
 		if (s_PowerResumeIndex != -1)
 		{
-			// 前取消
+			// 取消之前的恢复延迟定时器
 			RemoveTimer(&s_MainTimerQueue, s_PowerResumeIndex);
 			s_PowerResumeIndex = -1;
 		}
@@ -206,7 +220,8 @@ static void MsgStopAllPump(Msg* msg)
 static void MsgADCFinished(Msg* msg)
 {
 	// （需要设计一个多次检测保护，例如：连续检测到3次掉电/恢复电源，才开始进入电源模式切换
-	// 读取ADC的各个通道转换值，并转换到0.01v的数据
+	// 读取ADC的各个通道转换值，并转换到0.01v/1mA的数据（并进行比例放大）
+	transformADCValue(&s_ACVoltage, &s_BatteryVoltage, &s_MainCurrent, &s_ProteinSkimmerCurrent, &s_MainPumpCurrent);
 
 	// 根据当前工作模式判断
 	// 判断AC是否正常（电源如果异常，立刻停止所有泵，并延迟启动）
@@ -397,3 +412,34 @@ const CLI_Command_Definition_t cmd_def_uptime =
 	cmd_uptime, /* The function to run. */
 	0
 };
+
+// 查看电源状态
+static BaseType_t cmd_power( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+{
+	char			WriteBuffer[50];
+	(void)pcCommandString;
+
+	// 显示AC/Battery电源电压，当前电源状态（电池供电？AC供电？升压开关开启？）
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "DC:%d.%dV\r\n", s_ACVoltage / 1000, s_ACVoltage % 1000);
+	strncpy(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Battery:%d.%dV\r\n", s_BatteryVoltage / 1000, s_BatteryVoltage % 1000);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "Main Current:%dmA\r\n", s_MainCurrent);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "ProteinSkimmer Current:%dmA\r\n", s_ProteinSkimmerCurrent);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "MainPump Current:%dmA\r\n", s_MainPumpCurrent);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+
+
+	return pdFALSE;
+}
+
+const CLI_Command_Definition_t cmd_def_power =
+{
+	"power",
+	"\r\npower\r\n Show power status.\r\n",
+	cmd_power, /* The function to run. */
+	0
+};
+
