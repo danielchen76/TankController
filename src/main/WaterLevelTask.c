@@ -73,6 +73,7 @@ static TickType_t			s_NowTick;
 static const TickType_t	c_DataInterval		= pdMS_TO_TICKS(1000);		// 水位数据每1秒采集一次（后续再看看是否提升到500ms）
 static const uint8_t		c_NSeconds			= 7;						// N秒平均值是多少秒 （需要考虑最大值和最小值会被删除）
 
+// TODO: 需要特别计算清楚要多少个定时器
 static struMyTimer			s_WLTimerArray[8];
 static struMyTimerQueue		s_WLTimerQueue = {s_WLTimerArray, sizeof(s_WLTimerArray) / sizeof(s_WLTimerArray[0])};
 
@@ -90,6 +91,9 @@ static uint16_t				s_usLastROWL = 0;								// 上次定时检查的水位
 
 // 临时补水量（临时目标水位）
 
+// 系统暂停定时器
+static uint16_t				s_PauseSecond		= 0;
+static int16_t				s_PauseTimer		= -1;
 
 // 函数定义
 void ProcessWaterLevel(void* pvParameters);
@@ -98,6 +102,7 @@ static struStateMachine			s_WLStateMachine;
 
 // 状态机函数定义（同时也是给状态值使用）
 void* WL_StopState();
+void* WL_PauseState();
 void* WL_Init1State();
 void* WL_NormalState();
 void* WL_RORefillState();
@@ -107,6 +112,7 @@ void RefillROWaterTimer(void* pvParameters);
 void RefillBackupROWaterTimer(void* pvParameters);
 void ProteinSkimmerOnTimer(void* pvParameters);
 void BackupROTimer(void* pvParameters);
+void PauseTimer(void* pvParameters);
 
 
 void InitWaterLevelMsgQueue( void )
@@ -149,20 +155,38 @@ static void MsgBackupPowerChange(Msg* msg)
 	}
 }
 
+static void MsgStopAllPump(Msg* msg)
+{
+	(void)msg;
+
+	StateMachineSwitch(&s_WLStateMachine, WL_StopState);
+}
+
 static void MsgPauseSystem(Msg* msg)
 {
 	if (msg->Param.Pause.seconds > 0)
 	{
 		// 设定一个定时器，触发重启系统
+		s_PauseSecond = msg->Param.Pause.seconds;
+
+		// 定时器由状态函数来创建或更新
 	}
 
+	StateMachineSwitch(&s_WLStateMachine, WL_PauseState);
+
 	// 控制所有泵进入停机状态
-	// TODO:造浪泵怎么控制？（造浪泵也在这个水位控制任务中控制了？）
+	// 造浪泵怎么控制？（造浪泵独立控制，不在水位控制中执行）
 	// 底缸造浪泵在水位控制范围，主缸暂时不需要联动控制，只要提供遥控器/本机菜单控制即可
 }
 
-static void MsgStopAllPump(Msg* msg)
+static void MsgStartSystem(Msg* msg)
 {
+
+}
+
+static void MsgStopSystem(Msg* msg)
+{
+
 }
 
 static void MsgExRoWater(Msg* msg)
@@ -458,6 +482,30 @@ void ProcessWaterLevel(void* pvParameters)
 // 停止状态
 void* WL_StopState()
 {
+	// 如果从暂停状态强制停止，则需要删除暂停的定时器
+	if (s_PauseTimer != -1)
+	{
+		RemoveTimer(&s_WLTimerQueue, s_PauseTimer);
+		s_PauseTimer = -1;
+	}
+
+	return NULL;
+}
+
+// 暂停状态
+void* WL_PauseState()
+{
+	// 启动定时器，以便触发回到初始化状态。因为要提供不同时长的暂停，而状态机又无法提供参数。所以参数需要设置通过外部参数来传递
+	if (s_PauseTimer == -1)
+	{
+		s_PauseTimer = AddTimer(&s_WLTimerQueue, xTaskGetTickCount(), pdMS_TO_TICKS(s_PauseSecond * 1000), pdFALSE, PauseTimer, NULL);
+	}
+	else
+	{
+		// 正在执行暂停，使用新的延迟时长覆盖
+		UpdateTimer(&s_WLTimerQueue, s_PauseTimer, pdMS_TO_TICKS(s_PauseSecond * 1000), pdFALSE, NULL);
+	}
+
 	return NULL;
 }
 
@@ -619,11 +667,8 @@ void WL_ROBackupRefill_Normal_Change(StateMachineFunc pOld)
 	LogOutput(LOG_INFO, "Backup RO refill mode switch to normal mode.");
 }
 
-// 从所有状态切换到停止
-void WL_All_Stop_Change(StateMachineFunc pOld)
+void StopAll()
 {
-	(void)pOld;
-
 	// 删除部分可能正在进行的定时器（例如：Init时的蛋分启动延迟，或者电源切换过程使用的延迟）
 	if (s_ProteinSkimmerTimer)
 	{
@@ -647,8 +692,27 @@ void WL_All_Stop_Change(StateMachineFunc pOld)
 	Switch_RoPump(POWER_OFF);
 	Switch_BackupRoPump(POWER_OFF);
 	Switch_SeaPumpInOut(POWER_OFF);
+}
+
+// 从所有状态切换到停止
+void WL_All_Stop_Change(StateMachineFunc pOld)
+{
+	(void)pOld;
+
+	StopAll();
 
 	LogOutput(LOG_INFO, "Stop mode.");
+}
+
+// 从所有状态切换到暂停
+void WL_All_Pause_Change(StateMachineFunc pOld)
+{
+	// 执行和All_Stop一样的过程
+	(void)pOld;
+
+	StopAll();
+
+	LogOutput(LOG_INFO, "Pause mode.");
 }
 
 // 补充RO水到底缸，有一个最长约束时间，避免加水时间太长？
@@ -703,13 +767,23 @@ void BackupROTimer(void* pvParameters)
 	s_BackupROTimer = -1;
 }
 
+void PauseTimer(void* pvParameters)
+{
+	(void)pvParameters;
+
+	// 系统暂停结束，启动系统
+	StateMachineSwitch(&s_WLStateMachine, WL_Init1State);
+}
+
 
 // 水位控制任务的状态机配置数据
 const struStateChangeEntry		c_WLStateMachineChangeEntries[] =
 {
 		{WL_StopState, WL_Init1State, WL_Stop_Init1_Change},
+		{WL_PauseState, WL_Init1State, WL_Stop_Init1_Change},		// 从暂停状态进入重新启动，这个和Stop开机一样
 		{WL_Init1State, WL_NormalState, WL_Init1_Normal_Change},
 		{NULL, WL_StopState, WL_All_Stop_Change},
+		{NULL, WL_PauseState, WL_All_Pause_Change},
 		{WL_NormalState, WL_RORefillState, WL_Normal_RORefill_Change},
 		{WL_NormalState, WL_ROBackupRefillState, WL_Normal_ROBackupRefill_Change},
 		{WL_RORefillState, WL_NormalState, WL_RORefill_Normal_Change},
@@ -727,8 +801,38 @@ static struStateMachine			s_WLStateMachine =
 
 
 
+// --------------------------提供给外部使用的工具函数----------------------------------
+void StopSystem()
+{
+	Msg*		pMsg;
 
+	pMsg = MallocMsg();
+	if (pMsg)		// 消息分配不到，忽略此次按键通知
+	{
+		pMsg->Id = MSG_STOP_ALL_PUMP;
+		if (WL_MSG_SEND(pMsg) != pdPASS)
+		{
+			FreeMsg(pMsg);
+		}
+	}
+}
 
+void PauseSystem(uint16_t seconds)
+{
+	Msg*		pMsg;
+
+	pMsg = MallocMsg();
+	if (pMsg)		// 消息分配不到，忽略此次按键通知
+	{
+		pMsg->Id = MSG_PAUSE_SYS;
+		pMsg->Param.Pause.seconds = seconds;
+
+		if (WL_MSG_SEND(pMsg) != pdPASS)
+		{
+			FreeMsg(pMsg);
+		}
+	}
+}
 
 
 

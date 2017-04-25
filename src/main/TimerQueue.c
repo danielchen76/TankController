@@ -9,6 +9,7 @@
 
 #include "stm32f10x.h"
 #include <string.h>
+#include <task.h>
 
 #include "util.h"
 

@@ -101,13 +101,12 @@ void PowerCheckCallback(void* pvParameters)
 {
 	(void)pvParameters;
 	// 启动ADC中断读取方式，同时读取多个通道数据
-	// 然后在ADC中断中，进行数据获取后，通知main task消息，执行更新全局变量，提供当前Callback判断
+	// 然后在ADC DMA中断中，进行数据获取后，通知main task消息，执行更新全局变量
 	// 根据当前的电源状态，检查AC和Battery电源电压
 
 	StartGetVoltage();
 
-	// TODO 暂时在Callback中判断电源状态，后续再优化为中断中触发判断过程
-	//
+	// 在转换完成消息中判断电源状态，后续再优化为中断中触发判断过程
 }
 
 // 切换电源模式
@@ -134,6 +133,7 @@ void SwitchPowerMode(enumPowerMode toMode)
 	case POWER_TOBACKUP:
 		// todo:判断是否处于切换状态
 		// 关闭水位任务的所有泵
+		StopSystem();
 
 		// 关闭造浪
 		WaveMaker(pdFALSE, pdFALSE);
