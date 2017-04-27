@@ -16,6 +16,7 @@ void InitWaterLevelMsgQueue( void );
 void WaterLevelControlTask( void * pvParameters);
 
 // 发送消息给WL task的函数，主要提供给外部Task使用
+void StartSystem();
 void StopSystem();
 void PauseSystem(uint16_t seconds);
 

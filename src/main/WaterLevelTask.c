@@ -181,7 +181,9 @@ static void MsgPauseSystem(Msg* msg)
 
 static void MsgStartSystem(Msg* msg)
 {
+	(void)msg;
 
+	StateMachineSwitch(&s_WLStateMachine, WL_Init1State);
 }
 
 static void MsgStopSystem(Msg* msg)
@@ -232,6 +234,8 @@ static struEntry	Entries[] =
 	{MSG_RO_BACKUP_PUMP,	MsgRoBackupPumpSwitch},
 	{MSG_AC_POWER,			MsgACPowerChange},
 	{MSG_BACKUP_POWER,		MsgBackupPowerChange},
+	{MSG_START_SYS,			MsgStartSystem},
+	{MSG_STOP_SYS,			MsgStopSystem},
 	{MSG_PAUSE_SYS,			MsgPauseSystem},
 	{MSG_STOP_ALL_PUMP,		MsgStopAllPump},
 	{MSG_EX_RO_WATER,		MsgExRoWater},
@@ -512,6 +516,12 @@ void* WL_PauseState()
 // 主泵开启
 void* WL_Init1State()
 {
+	// 取消可能存在的定时器（暂停系统定时器，）
+	if (s_PauseTimer != -1)
+	{
+		RemoveTimer(&s_WLTimerQueue, s_PauseTimer);
+	}
+
 	return NULL;
 }
 
@@ -834,6 +844,21 @@ void PauseSystem(uint16_t seconds)
 	}
 }
 
+void StartSystem()
+{
+	Msg*		pMsg;
+
+	pMsg = MallocMsg();
+	if (pMsg)		// 消息分配不到，忽略此次按键通知
+	{
+		pMsg->Id = MSG_START_SYS;
+		if (WL_MSG_SEND(pMsg) != pdPASS)
+		{
+			FreeMsg(pMsg);
+		}
+	}
+}
+
 
 
 
@@ -867,6 +892,10 @@ static BaseType_t cmd_wlstatus( char *pcWriteBuffer, size_t xWriteBufferLen, con
 	else if (s_WLStateMachine.currentState == WL_ROBackupRefillState)
 	{
 		snprintf(WriteBuffer, sizeof(WriteBuffer), "Current state: ROBackupRefill\r\n");
+	}
+	else if (s_WLStateMachine.currentState == WL_PauseState)
+	{
+		snprintf(WriteBuffer, sizeof(WriteBuffer), "Current state: Pause\r\n");
 	}
 	else
 	{

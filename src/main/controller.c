@@ -15,6 +15,8 @@
 #include "tc_gpio.h"
 #include "tc_rtc.h"
 #include "tc_adc.h"
+#include "logTask.h"
+#include "WaterLevelTask.h"
 
 #include <queue.h>
 #include <task.h>
@@ -48,6 +50,16 @@ static uint16_t				s_BatteryVoltage = 0;
 static uint16_t				s_MainCurrent = 0;
 static uint16_t				s_ProteinSkimmerCurrent = 0;
 static uint16_t				s_MainPumpCurrent = 0;
+
+#define LOWEST_DC_VOLTAGE	(18 * 1000)
+#define LOWEST_BAT_VOLTAGE	(9 * 1000)
+
+#define NORMAL_DC_VOLTAGE	(21 * 1000)
+#define NORMAL_BAT_VOLTAGE	(10 * 1000)
+
+#define MAX_DC_LOST_COUNT	5		// 连续5次检测到电源电压低于最小电压，开始切换到电池供电
+#define MAX_DC_RESUME_COUNT	5		// 连续5次检测到电源电源恢复到正常水平以上，开始恢复AC供电
+static uint16_t				s_DCCheckCount = 0;
 
 
 //define function
@@ -117,14 +129,18 @@ void SwitchPowerMode(enumPowerMode toMode)
 	case POWER_AC:
 		// 从电池供电，切换到AC，不需要重新做启动，因为电源是不中断的，所以瞬间切换，所有泵应该都能继续工作
 		Switch_ToBackupPower(POWER_OFF);
+		LogOutput(LOG_INFO, "Switch to AC power.");
 		Switch_BackupPower(POWER_OFF);
+		LogOutput(LOG_INFO, "Turn off 12v->24v transform module.");
 		break;
 
 	case POWER_BATTERY:
 		// 切换到备用电池供电状态（延迟启动前，已经启动升压电路了，避免升压启动时，冲击）
 		Switch_ToBackupPower(POWER_ON);
+		LogOutput(LOG_INFO, "Turn on 12v->24v transform module.");
 
 		// 发送消息，启动水位任务中的所有泵
+		StartSystem();
 
 		// 延迟启动造浪
 		WaveMaker(pdTRUE, pdTRUE);
@@ -188,6 +204,70 @@ void PowerResumeCallback(void* pvParameters)
 
 
 
+// 检查电源状态，并上报
+void CheckVoltage()
+{
+	// 根据当前工作模式判断
+	switch (s_PowerMode)
+	{
+	case POWER_AC:				// 220v供电
+	case POWER_AC_RESUME:		// 切换会220v供电中间态（没有什么动作，只是检测到220v恢复后，等待一段时间才恢复）
+		// 检查AC电源是否低于最小值
+		// 判断AC是否正常（电源如果异常，立刻停止所有泵，并延迟启动）
+		if (s_ACVoltage < LOWEST_DC_VOLTAGE)
+		{
+			s_DCCheckCount++;
+		}
+		else
+		{
+			// 检测到一次正常，就复位计数器
+			s_DCCheckCount = 0;
+		}
+		if (s_DCCheckCount >= MAX_DC_LOST_COUNT)
+		{
+			s_DCCheckCount = 0;
+			SwitchPowerMode(POWER_TOBACKUP);
+			LogOutput(LOG_WARN, "AC power lost, switch to battery.");
+		}
+		break;
+
+	case POWER_BATTERY:			// 后备电池供电
+	case POWER_TOBACKUP:		// 切换到备用电池的中间状态
+		// 检查AC电源是否正常
+		if (s_ACVoltage > NORMAL_DC_VOLTAGE)
+		{
+			s_DCCheckCount++;
+		}
+		else
+		{
+			// 检测到一次电源不能达到正常值，就复位计数器
+			s_DCCheckCount = 0;
+		}
+		if (s_DCCheckCount >= MAX_DC_RESUME_COUNT)
+		{
+			s_DCCheckCount = 0;
+			SwitchPowerMode(POWER_AC_RESUME);
+			LogOutput(LOG_INFO, "AC power begin resuming.");
+		}
+		break;
+
+	default:
+		break;
+	}
+}
+
+
+// 检查电流状态，并上报
+void CheckCurrent()
+{
+
+}
+
+// 检查电池状态
+void CheckBattery()
+{
+
+}
 
 
 // 消息处理函数（多个）
@@ -223,11 +303,14 @@ static void MsgADCFinished(Msg* msg)
 	// 读取ADC的各个通道转换值，并转换到0.01v/1mA的数据（并进行比例放大）
 	transformADCValue(&s_ACVoltage, &s_BatteryVoltage, &s_MainCurrent, &s_ProteinSkimmerCurrent, &s_MainPumpCurrent);
 
-	// 根据当前工作模式判断
-	// 判断AC是否正常（电源如果异常，立刻停止所有泵，并延迟启动）
+	// 检查电源电压
+	CheckVoltage();
+
+	// 检查电流状态
+	CheckCurrent();
 
 	// 判断备用电池是否正常
-
+	CheckBattery();
 }
 
 static struEntry	Entries[] =
