@@ -54,7 +54,8 @@ static uint16_t				s_MainPumpCurrent = 0;
 #define LOWEST_DC_VOLTAGE	(18 * 1000)
 #define LOWEST_BAT_VOLTAGE	(9 * 1000)
 
-#define NORMAL_DC_VOLTAGE	(21 * 1000)
+//#define NORMAL_DC_VOLTAGE	(21 * 1000)
+#define NORMAL_DC_VOLTAGE	(18 * 1000)		// for test
 #define NORMAL_BAT_VOLTAGE	(10 * 1000)
 
 #define MAX_DC_LOST_COUNT	5		// 连续5次检测到电源电压低于最小电压，开始切换到电池供电
@@ -496,6 +497,18 @@ const CLI_Command_Definition_t cmd_def_uptime =
 	0
 };
 
+const char* PowerMode2String(enumPowerMode powerMode)
+{
+	switch (powerMode)
+	{
+	case POWER_AC: return "AC";
+	case POWER_BATTERY: return "Battery";
+	case POWER_TOBACKUP: return "AC->Battery";
+	case POWER_AC_RESUME: return "Battery->AC";
+	default: return "Unknown";
+	}
+}
+
 // 查看电源状态
 static BaseType_t cmd_power( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
 {
@@ -506,6 +519,8 @@ static BaseType_t cmd_power( char *pcWriteBuffer, size_t xWriteBufferLen, const 
 	snprintf(WriteBuffer, sizeof(WriteBuffer), "DC:%d.%dV\r\n", s_ACVoltage / 1000, s_ACVoltage % 1000);
 	strncpy(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
 	snprintf(WriteBuffer, sizeof(WriteBuffer), "Battery:%d.%dV\r\n", s_BatteryVoltage / 1000, s_BatteryVoltage % 1000);
+	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
+	snprintf(WriteBuffer, sizeof(WriteBuffer), "PowerMode:%s\r\n", PowerMode2String(s_PowerMode));
 	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
 	snprintf(WriteBuffer, sizeof(WriteBuffer), "Main Current:%dmA\r\n", s_MainCurrent);
 	strncat(pcWriteBuffer, WriteBuffer, xWriteBufferLen);
